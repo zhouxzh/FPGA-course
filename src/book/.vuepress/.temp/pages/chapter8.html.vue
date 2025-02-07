@@ -1,0 +1,87 @@
+<template><div><h1 id="第8讲-前沿技术专题" tabindex="-1"><a class="header-anchor" href="#第8讲-前沿技术专题"><span>第8讲：前沿技术专题</span></a></h1>
+<h2 id="高层次综合-hls-设计流程" tabindex="-1"><a class="header-anchor" href="#高层次综合-hls-设计流程"><span>高层次综合(HLS)设计流程</span></a></h2>
+<ol>
+<li>HLS技术原理
+<ul>
+<li>C/C++到RTL的转换机制</li>
+<li>流水线优化与资源调度</li>
+</ul>
+</li>
+<li>Vivado HLS开发流程
+<ul>
+<li>设计入口：C/C++算法描述</li>
+<li>约束指定（时钟/接口/资源）</li>
+<li>优化指令（流水线/展开/数组分割）</li>
+</ul>
+</li>
+<li>设计实例对比
+<ul>
+<li>矩阵乘法：HLS vs RTL实现</li>
+<li>吞吐率与资源消耗分析</li>
+</ul>
+</li>
+</ol>
+<h2 id="fpga加速ai推理-int8量化实现" tabindex="-1"><a class="header-anchor" href="#fpga加速ai推理-int8量化实现"><span>FPGA加速AI推理（INT8量化实现）</span></a></h2>
+<div class="language-verilog line-numbers-mode" data-highlighter="shiki" data-ext="verilog" data-title="verilog" style="--shiki-light:#383A42;--shiki-dark:#abb2bf;--shiki-light-bg:#FAFAFA;--shiki-dark-bg:#282c34"><pre v-pre class="shiki shiki-themes one-light one-dark-pro vp-code"><code><span class="line"><span style="--shiki-light:#A0A1A7;--shiki-light-font-style:italic;--shiki-dark:#7F848E;--shiki-dark-font-style:italic">// 量化卷积层实现示例</span></span>
+<span class="line"><span style="--shiki-light:#A626A4;--shiki-dark:#C678DD">module</span><span style="--shiki-light:#C18401;--shiki-dark:#E5C07B"> quant_conv</span><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF"> #(</span></span>
+<span class="line"><span style="--shiki-light:#A626A4;--shiki-dark:#C678DD">  parameter</span><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF"> BIT_WIDTH = </span><span style="--shiki-light:#986801;--shiki-dark:#D19A66">8</span></span>
+<span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">)(</span></span>
+<span class="line"><span style="--shiki-light:#A626A4;--shiki-dark:#C678DD">  input</span><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">  [BIT_WIDTH-</span><span style="--shiki-light:#986801;--shiki-dark:#D19A66">1</span><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">:</span><span style="--shiki-light:#986801;--shiki-dark:#D19A66">0</span><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">]  actv,</span></span>
+<span class="line"><span style="--shiki-light:#A626A4;--shiki-dark:#C678DD">  input</span><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">  [BIT_WIDTH-</span><span style="--shiki-light:#986801;--shiki-dark:#D19A66">1</span><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">:</span><span style="--shiki-light:#986801;--shiki-dark:#D19A66">0</span><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">]  weight,</span></span>
+<span class="line"><span style="--shiki-light:#A626A4;--shiki-dark:#C678DD">  output</span><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF"> [</span><span style="--shiki-light:#986801;--shiki-dark:#D19A66">2</span><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">*BIT_WIDTH:</span><span style="--shiki-light:#986801;--shiki-dark:#D19A66">0</span><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">]  accum</span></span>
+<span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">);</span></span>
+<span class="line"><span style="--shiki-light:#A0A1A7;--shiki-light-font-style:italic;--shiki-dark:#7F848E;--shiki-dark-font-style:italic">  // 符号位扩展乘法</span></span>
+<span class="line"><span style="--shiki-light:#A626A4;--shiki-dark:#C678DD">  wire</span><span style="--shiki-light:#A626A4;--shiki-dark:#C678DD"> signed</span><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF"> [</span><span style="--shiki-light:#986801;--shiki-dark:#D19A66">2</span><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">*BIT_WIDTH-</span><span style="--shiki-light:#986801;--shiki-dark:#D19A66">1</span><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">:</span><span style="--shiki-light:#986801;--shiki-dark:#D19A66">0</span><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">] product = $</span><span style="--shiki-light:#A626A4;--shiki-dark:#C678DD">signed</span><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">(actv) * $</span><span style="--shiki-light:#A626A4;--shiki-dark:#C678DD">signed</span><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">(weight);</span></span>
+<span class="line"><span style="--shiki-light:#A0A1A7;--shiki-light-font-style:italic;--shiki-dark:#7F848E;--shiki-dark-font-style:italic">  // 累加器带饱和运算</span></span>
+<span class="line"><span style="--shiki-light:#A626A4;--shiki-dark:#C678DD">  assign</span><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF"> accum = (|product[</span><span style="--shiki-light:#986801;--shiki-dark:#D19A66">2</span><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">*BIT_WIDTH-</span><span style="--shiki-light:#986801;--shiki-dark:#D19A66">1</span><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">:BIT_WIDTH+</span><span style="--shiki-light:#986801;--shiki-dark:#D19A66">1</span><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">]) ? </span></span>
+<span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">                 {</span><span style="--shiki-light:#986801;--shiki-dark:#D19A66">1'b1</span><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">, {(</span><span style="--shiki-light:#986801;--shiki-dark:#D19A66">2</span><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">*BIT_WIDTH){</span><span style="--shiki-light:#986801;--shiki-dark:#D19A66">1'b0</span><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">}}} : </span><span style="--shiki-light:#A0A1A7;--shiki-light-font-style:italic;--shiki-dark:#7F848E;--shiki-dark-font-style:italic">// 饱和处理</span></span>
+<span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">                 {</span><span style="--shiki-light:#986801;--shiki-dark:#D19A66">1'b0</span><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">, product};</span></span>
+<span class="line"><span style="--shiki-light:#A626A4;--shiki-dark:#C678DD">endmodule</span></span></code></pre>
+<div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div></div></div><h2 id="异构计算平台-zynq-ultrascale-mpsoc" tabindex="-1"><a class="header-anchor" href="#异构计算平台-zynq-ultrascale-mpsoc"><span>异构计算平台（Zynq UltraScale+ MPSoC）</span></a></h2>
+<ol>
+<li>架构组成
+<ul>
+<li>处理系统(PS)与可编程逻辑(PL)协同</li>
+<li>AXI高速互联总线</li>
+</ul>
+</li>
+<li>开发模式对比
+<ul>
+<li>Bare-metal编程</li>
+<li>Linux驱动开发</li>
+<li>OpenCL异构计算</li>
+</ul>
+</li>
+<li>设计案例
+<ul>
+<li>视频处理流水线</li>
+<li>实时控制系统</li>
+</ul>
+</li>
+</ol>
+<h2 id="开源fpga工具链-yosys-nextpnr" tabindex="-1"><a class="header-anchor" href="#开源fpga工具链-yosys-nextpnr"><span>开源FPGA工具链（Yosys/NextPNR）</span></a></h2>
+<div class="language-tcl line-numbers-mode" data-highlighter="shiki" data-ext="tcl" data-title="tcl" style="--shiki-light:#383A42;--shiki-dark:#abb2bf;--shiki-light-bg:#FAFAFA;--shiki-dark-bg:#282c34"><pre v-pre class="shiki shiki-themes one-light one-dark-pro vp-code"><code><span class="line"><span style="--shiki-light:#A0A1A7;--shiki-light-font-style:italic;--shiki-dark:#7F848E;--shiki-dark-font-style:italic"># Yosys综合流程示例</span></span>
+<span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">read_verilog -sv design.sv</span></span>
+<span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">synth_xilinx -family xc7</span></span>
+<span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">write_edif -nogndvcc design.edif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#A0A1A7;--shiki-light-font-style:italic;--shiki-dark:#7F848E;--shiki-dark-font-style:italic"># NextPNR布局布线</span></span>
+<span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">nextpnr-xilinx --xdc constraints.xdc </span><span style="--shiki-light:#0184BC;--shiki-dark:#56B6C2">\</span></span>
+<span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">               --edif design.edif </span><span style="--shiki-light:#0184BC;--shiki-dark:#56B6C2">\</span></span>
+<span class="line"><span style="--shiki-light:#383A42;--shiki-dark:#ABB2BF">               --output design.bit</span></span></code></pre>
+<div class="line-numbers" aria-hidden="true" style="counter-reset:line-number 0"><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div><div class="line-number"></div></div></div><h2 id="实验环节" tabindex="-1"><a class="header-anchor" href="#实验环节"><span>实验环节</span></a></h2>
+<ol>
+<li>HLS图像滤波实现与优化</li>
+<li>INT8量化MNIST分类器部署</li>
+<li>Zynq PS-PL数据交互设计</li>
+<li>开源工具链全流程实践</li>
+</ol>
+<h2 id="扩展阅读" tabindex="-1"><a class="header-anchor" href="#扩展阅读"><span>扩展阅读</span></a></h2>
+<ul>
+<li>Xilinx Vitis Unified Software Platform</li>
+<li>ONNX FPGA部署方案</li>
+<li>RISC-V软核在FPGA的实现</li>
+</ul>
+</div></template>
+
+
