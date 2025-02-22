@@ -1,0 +1,48 @@
+digraph fpga_features {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor=white, penwidth=2];
+    edge [color="#666666", arrowsize=0.8];
+
+    // 节点定义
+    subgraph cluster_main {
+        label="FPGA核心特性";
+        labelloc=b;
+        labeljust=l;
+        color=transparent;
+
+        realtime [label=<
+            <table border="0" cellborder="0">
+                <tr><td><font color="#2E86C1">⚡</font></td><td><b>实时处理</b></td></tr>
+        <tr><td colspan="2">4K@60fps实时处理<br/>延迟&lt;2ms</td></tr>
+            </table>
+        >, fillcolor="#EBF5FB", color="#2E86C1"];
+
+        parallel [label=<
+            <table border="0" cellborder="0">
+                <tr><td><font color="#28B463">▨▨</font></td><td><b>并行架构</b></td></tr>
+                <tr><td colspan="2">多核并行架构<br/>吞吐量↑300%</td></tr>
+            </table>
+        >, fillcolor="#EAFAF1", color="#28B463"];
+
+        efficiency [label=<
+            <table border="0" cellborder="0">
+                <tr><td><font color="#D35400">♻</font></td><td><b>能效优化</b></td></tr>
+                <tr><td colspan="2">DVFS技术<br/>功耗↓45%</td></tr>
+            </table>
+        >, fillcolor="#FBEEE6", color="#D35400"];
+    }
+
+    // 连接关系
+    realtime -> parallel [dir=both, label="数据流水线"];
+    parallel -> efficiency [dir=both, label="功耗管理"];
+    efficiency -> realtime [dir=both, label="时钟同步"];
+
+    // 图例说明
+    legend [shape=plaintext, label=<
+        <table border="0" cellspacing="2">
+            <tr><td bgcolor="#EBF5FB"> </td><td>实时处理模块</td></tr>
+            <tr><td bgcolor="#EAFAF1"> </td><td>并行架构模块</td></tr>
+            <tr><td bgcolor="#FBEEE6"> </td><td>能效优化模块</td></tr>
+        </table>
+    >];
+}
