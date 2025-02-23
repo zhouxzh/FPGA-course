@@ -4,11 +4,13 @@ export default sidebar({
   "/": [
     "",
     {
-      text: "书籍章节",
+      text: "理论教程",
       icon: "book",
       prefix: "/book/",
       collapsible: true,
       children: [
+        "README.md",
+        "chapter0.md",
         "chapter1.md",
         "chapter2.md",
         "chapter3.md",

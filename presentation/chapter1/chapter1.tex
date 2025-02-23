@@ -1,0 +1,66 @@
+\documentclass{beamer}
+
+% 使用 xelatex 编译，引入 xeCJK 包支持中文
+\usepackage[UTF8]{ctex}
+\usepackage{fontspec}
+\setmainfont{SimSun} % 设置中文字体为宋体
+\usepackage{tabularx}
+\usepackage{tikz}
+
+
+% 主题设置
+\usetheme{Dresden}
+\usecolortheme{default}
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+% 标题页信息
+\title{FPGA系统设计}
+\subtitle{FPGA与CPLD的架构基础}
+\author{周贤中}
+\institute{广东工业大学集成电路学院}
+\date{\today}
+
+% 文档内容
+\begin{document}
+
+% 标题页
+\begin{frame}
+\titlepage
+\end{frame}
+
+% 目录页
+\begin{frame}
+\frametitle{目录}
+\tableofcontents
+\end{frame}
+
+\section{FPGA与CPLD的基本概念}
+
+\begin{frame}{基本概念}
+\phantomsection\label{ux57faux672cux6982ux5ff5}
+\begin{itemize}
+\item
+    \textbf{FPGA}（Field-Programmable Gate Array）\\
+    基于查找表（LUT）结构的可编程逻辑器件，支持高密度逻辑资源、复杂时序设计和大规模并行处理。
+\item
+    \textbf{CPLD}（Complex Programmable Logic Device）\\
+    基于乘积项（Product-Term）结构的可编程逻辑器件，适合简单逻辑控制和组合电路设计。
+\end{itemize}
+\end{frame}
+
+% \include{section1}
+% \include{section2}
+% \include{section3}
+\include{section4}
+
+
+% 结尾页
+\begin{frame}
+\centering
+\frametitle{谢谢！}
+感谢聆听！
+\end{frame}
+
+\end{document}

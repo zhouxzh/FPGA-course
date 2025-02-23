@@ -1,0 +1,954 @@
+\documentclass{beamer}
+
+% 使用 xelatex 编译，引入 xeCJK 包支持中文
+\usepackage[UTF8]{ctex}
+\usepackage{fontspec}
+\setmainfont{SimSun} % 设置中文字体为宋体
+\usepackage{tabularx}
+\usepackage{tikz}
+
+
+% 主题设置
+\usetheme{Dresden}
+\usecolortheme{default}
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+% 标题页信息
+\title{FPGA系统设计}
+\subtitle{介绍}
+\author{周贤中}
+\institute{广东工业大学集成电路学院}
+\date{\today}
+
+% 文档内容
+\begin{document}
+
+% 标题页
+\begin{frame}
+\titlepage
+\end{frame}
+
+% 目录页
+\begin{frame}
+\frametitle{目录}
+\tableofcontents
+\end{frame}
+
+\section{PLD与ASIC的基本概念}
+\subsection{PLD的基本概念}
+\begin{frame}{\textbf{PLD的基本概念}}
+可编程逻辑器件（Programmable Logic Device,
+PLD）是一类可以通过编程实现特定逻辑功能的集成电路。PLD的主要特点是通过软件工具对硬件进行配置，从而实现不同的逻辑功能。以下是PLD的核心概念：
+\end{frame}
+
+\begin{frame}{\textbf{PLD的分类}}
+PLD根据其复杂性和功能可以分为以下几类：
+
+\begin{enumerate}
+\tightlist
+\item
+    \textbf{SPLD（简单可编程逻辑器件）}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    包括PAL（可编程阵列逻辑）和GAL（通用阵列逻辑）。\\
+    \item
+    适合实现简单的逻辑功能，如组合逻辑和时序逻辑。\\
+    \end{itemize}
+\item
+    \textbf{CPLD（复杂可编程逻辑器件）}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    由多个SPLD模块和可编程互连资源组成。\\
+    \item
+    适合实现中等复杂度的逻辑功能，如状态机和接口转换。\\
+    \end{itemize}
+\item
+    \textbf{FPGA（现场可编程门阵列）}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    由大量可配置逻辑块（CLB）、可编程互连资源和I/O单元组成。\\
+    \item
+    适合实现复杂的逻辑功能，如数字信号处理和通信协议。
+    \end{itemize}
+\end{enumerate}
+\end{frame}
+
+\begin{frame}{\textbf{PLD的特点}}
+\begin{itemize}
+\tightlist
+\item
+    \textbf{可编程性}: 用户可以通过编程实现不同的逻辑功能。\\
+\item
+    \textbf{灵活性}: 支持动态重构，适合快速原型设计和迭代开发。\\
+\item
+    \textbf{开发周期短}: 相比ASIC，PLD的开发周期显著缩短。\\
+\item
+    \textbf{成本适中}: 适合中小批量生产，无需高昂的流片成本。
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\textbf{PLD的应用场景}}
+\begin{itemize}
+\tightlist
+\item
+    通信设备（如5G基站、网络交换机）\\
+\item
+    工业控制（如PLC、机器人控制）\\
+\item
+    消费电子（如视频处理、游戏硬件）\\
+\item
+    原型设计与验证（如ASIC设计的前期验证）
+\end{itemize}
+\end{frame}
+
+\subsection{ASIC的基本概念}
+
+\begin{frame}{\textbf{ASIC的基本概念}}
+专用集成电路（Application-Specific Integrated Circuit,
+ASIC）是为特定应用定制的集成电路，设计完成后功能固定，无法更改。以下是ASIC的核心概念：
+\end{frame}
+
+\begin{frame}{\textbf{ASIC的分类}}
+\begin{enumerate}
+\tightlist
+\item
+    \textbf{全定制ASIC}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    从晶体管级别进行设计，性能最优，但开发成本和时间最高。\\
+    \end{itemize}
+\item
+    \textbf{半定制ASIC}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    基于标准单元库或门阵列进行设计，性能和成本介于全定制和可编程器件之间。\\
+    \end{itemize}
+\item
+    \textbf{结构化ASIC}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    基于预定义的硬件结构进行设计，开发周期较短，成本较低。
+    \end{itemize}
+\end{enumerate}
+\end{frame}
+
+\begin{frame}{\textbf{ASIC的特点}}
+\begin{itemize}
+\tightlist
+\item
+    \textbf{高性能}: 针对特定应用优化，性能优于PLD。\\
+\item
+    \textbf{低功耗}: 针对特定应用进行功耗优化，功耗低于PLD。\\
+\item
+    \textbf{高成本}: 开发成本高，适合大批量生产。\\
+\item
+    \textbf{开发周期长}: 从设计到流片需要数月甚至数年时间。
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\textbf{ASIC的应用场景}}
+\begin{itemize}
+\tightlist
+\item
+    消费电子（如智能手机、平板电脑）\\
+\item
+    汽车电子（如ADAS、车载娱乐系统）\\
+\item
+    数据中心（如AI加速芯片、网络处理器）\\
+\item
+    工业设备（如传感器、控制器）
+\end{itemize}
+\end{frame}
+
+\subsection{PLD与ASIC的详细对比分析}
+\begin{frame}{\textbf{设计灵活性}}
+\begin{itemize}
+\tightlist
+\item
+    \textbf{PLD}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    高灵活性，可编程实现任意逻辑功能\\
+    \item
+    支持动态重构\\
+    \item
+    适合快速原型设计和迭代开发\\
+    \item
+    适用于需频繁更新的场景\\
+    \end{itemize}
+\item
+    \textbf{ASIC}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    功能固化成品后无法修改\\
+    \item
+    适合固定功能场景\\
+    \item
+    设计修改需重新流片，成本高昂
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\textbf{性能}}
+
+\begin{itemize}
+\tightlist
+\item
+    \textbf{PLD}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    中等复杂度设计适用\\
+    \item
+    信号传输延迟较高\\
+    \item
+    适合对性能要求不高的场景\\
+    \end{itemize}
+\item
+    \textbf{ASIC}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    性能最高，针对特定场景优化\\
+    \item
+    信号传输延迟低\\
+    \item
+    适合高速通信、AI加速等高性能需求场景
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\textbf{功耗}}
+
+\begin{itemize}
+\tightlist
+\item
+    \textbf{PLD}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    功耗较高（静态/动态）\\
+    \item
+    适合对功耗要求宽松的场景\\
+    \end{itemize}
+\item
+    \textbf{ASIC}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    功耗最低，经定制优化\\
+    \item
+    适合移动设备、物联网等低功耗场景
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\textbf{成本}}
+
+\begin{itemize}
+\tightlist
+\item
+    \textbf{PLD}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    中等成本，中小批量生产适用\\
+    \item
+    开发成本低，无流片费用\\
+    \end{itemize}
+\item
+    \textbf{ASIC}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    大批量时单位成本低\\
+    \item
+    流片成本高昂\\
+    \item
+    适合大规模生产分摊成本
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\textbf{开发周期}}
+
+\begin{itemize}
+\tightlist
+\item
+    \textbf{PLD}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    周期短（数周至数月）\\
+    \item
+    设计流程简单\\
+    \item
+    适合时间紧迫项目\\
+    \end{itemize}
+\item
+    \textbf{ASIC}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    周期长（数月至数年）\\
+    \item
+    需复杂物理设计和验证流程\\
+    \item
+    适合长期高要求项目
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\textbf{开发工具}}
+
+\begin{itemize}
+\tightlist
+\item
+    \textbf{PLD}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    需专用EDA工具（如Vivado, Quartus）\\
+    \item
+    工具链成熟，快速验证\\
+    \item
+    适合PLD工程师\\
+    \end{itemize}
+\item
+    \textbf{ASIC}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    需ASIC工具链（如Cadence, Synopsys）\\
+    \item
+    工具复杂，需专业团队\\
+    \item
+    适用经验丰富的ASIC工程师
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\textbf{适用场景}}
+
+\begin{itemize}
+\tightlist
+\item
+    \textbf{PLD}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    通信设备（5G基站、交换机）\\
+    \item
+    工业控制（PLC、机器人）\\
+    \item
+    消费电子（视频处理）\\
+    \item
+    ASIC原型验证\\
+    \end{itemize}
+\item
+    \textbf{ASIC}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    消费电子（手机、平板）\\
+    \item
+    汽车电子（ADAS）\\
+    \item
+    数据中心（AI加速器）\\
+    \item
+    工业设备（传感器）
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\textbf{量产成本}}
+
+\begin{itemize}
+\tightlist
+\item
+    \textbf{PLD}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    中小批量成本较高\\
+    \item
+    单位成本随规模降低\\
+    \end{itemize}
+\item
+    \textbf{ASIC}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    大批量单位成本极低\\
+    \item
+    适合大规模生产
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\textbf{可编程性}}
+
+\begin{itemize}
+\tightlist
+\item
+    \textbf{PLD}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    可重复编程和动态重构\\
+    \item
+    支持功能灵活调整\\
+    \end{itemize}
+\item
+    \textbf{ASIC}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    功能固化成形后不可修改
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\textbf{集成度}}
+
+\begin{itemize}
+\tightlist
+\item
+    \textbf{PLD}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    高集成度（数百万逻辑单元）\\
+    \item
+    支持复杂算法和协议\\
+    \end{itemize}
+\item
+    \textbf{ASIC}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    定制化集成更多模块\\
+    \item
+    优化集成度和性能
+    \end{itemize}
+\end{itemize}
+
+\textbf{设计复杂度}
+
+\begin{itemize}
+\tightlist
+\item
+    \textbf{PLD}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    中等复杂度，适用中小规模设计\\
+    \item
+    工具提供丰富IP核\\
+    \end{itemize}
+\item
+    \textbf{ASIC}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    复杂度高，需完整流程（逻辑设计→物理设计→流片）\\
+    \item
+    需大型专业团队
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\textbf{风险与可靠性}}
+
+\begin{itemize}
+\tightlist
+\item
+    \textbf{PLD}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    风险低（可重新编程修复）\\
+    \item
+    适合原型验证\\
+    \item
+    可靠性依赖器件寿命\\
+    \end{itemize}
+\item
+    \textbf{ASIC}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    风险高（需重新流片修复错误）\\
+    \item
+    需充分验证设计\\
+    \item
+    高可靠性（经应用优化）
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\textbf{生态系统}}
+
+\begin{itemize}
+\tightlist
+\item
+    \textbf{PLD}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    成熟生态（工具、IP核、社区）\\
+    \item
+    厂商支持完善（Xilinx/Intel）\\
+    \item
+    适合中小企业和初创\\
+    \end{itemize}
+\item
+    \textbf{ASIC}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    需专业团队和代工厂（TSMC/三星）\\
+    \item
+    工具链复杂，成本高昂\\
+    \item
+    适合大企业或资金充足项目
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[allowframebreaks]
+\frametitle{PLD vs ASIC 核心对比}
+\begin{block}{特性对比}
+% \tiny
+\begin{tabular}{|p{1.8cm}|p{4cm}|p{4cm}|}
+\hline
+\textbf{维度} & \textbf{PLD} & \textbf{ASIC} \\ \hline
+设计特征 & 
+$\bullet$ 可重构\newline
+$\bullet$ 性能/功耗中等\newline
+$\bullet$ 开发周期：周级
+& 
+$\bullet$ 功能固化\newline
+$\bullet$ 高性能/低功耗\newline
+$\bullet$ 开发周期：月/年级 \\ \hline
+
+生态系统 & 
+$\bullet$ Xilinx/Intel工具\newline
+$\bullet$ 开源社区\newline
+$\bullet$ 云开发
+& 
+$\bullet$ TSMC/三星代工\newline
+$\bullet$ EDA厂商协作\newline
+$\bullet$ 专业IP供应商 \\ \hline
+
+经济模型 & 
+$\bullet$ 开发成本：\$10$^3$-\$10$^5$\newline
+$\bullet$ 中小批量
+& 
+$\bullet$ NRE成本：\$10$^6$+\newline
+$\bullet$ 量产成本：\$10$^0$/unit \\ \hline
+
+风险控制 & 
+$\bullet$ 动态重编程\newline
+$\bullet$ 多版本调试
+& 
+$\bullet$ FIB修改：\$10$^5$/次\newline
+$\bullet$ 金属掩模费用 \\ \hline
+
+典型应用 & 
+$\bullet$ 5G基站\newline
+$\bullet$ 工控系统
+& 
+$\bullet$ 手机SoC\newline
+$\bullet$ AI加速 \\ \hline
+\end{tabular}
+\end{block}
+\pagebreak
+\begin{block}{决策矩阵}
+% \tiny
+\begin{tabular}{|p{1.8cm}|p{4cm}|p{4cm}|}
+\hline
+\textbf{条件} & \textbf{选PLD} & \textbf{选ASIC} \\ \hline
+项目规模 & 团队<20人\newline 预算<\$1M & 团队>50人\newline 预算>\$10M \\ 
+迭代需求 & 功能未定型\newline >3次/年 & 架构冻结\newline <1次/3年 \\
+芯片用量 & <10k片/年 & >1M片/年 \\
+认证要求 & 商用级验证 & 车规级/军工级认证 \\
+\hline
+\end{tabular}
+\end{block}
+\end{frame}
+
+\begin{frame}[allowframebreaks]{典型案例}
+\begin{block}{PLD的典型应用}
+\begin{itemize}
+\tightlist
+\item
+    通信设备:
+    5G基站、网络交换机等设备中，FPGA用于实现高速信号处理和协议转换。
+\item
+    工业控制:
+    PLC（可编程逻辑控制器）和机器人控制中，CPLD用于实现逻辑控制和接口转换。
+\item
+    消费电子: 视频处理、游戏硬件等设备中，FPGA用于实现图像处理和算法加速。
+\item
+    原型设计与验证: 在ASIC设计的前期，FPGA用于功能验证和性能测试。
+\end{itemize}
+\end{block}
+
+\begin{block}{ASIC的典型应用}
+\begin{itemize}
+\tightlist
+\item
+    消费电子:
+    智能手机、平板电脑等设备中，ASIC用于实现处理器、基带芯片和图像传感器。
+\item
+    汽车电子:
+    ADAS（高级驾驶辅助系统）和车载娱乐系统中，ASIC用于实现传感器处理和控制算法。
+\item
+    数据中心: AI加速芯片和网络处理器中，ASIC用于实现高性能计算和数据传输。
+\item
+    工业设备: 传感器和控制器中，ASIC用于实现高精度测量和控制逻辑。
+\end{itemize}
+\end{block}
+\end{frame}
+
+\section{FPGA市场分析}
+
+\begin{frame}{\textbf{FPGA与CPLD的市场份额对比}}
+以下是FPGA与CPLD在全球市场中的份额对比：
+
+在全球可编程逻辑器件市场中，FPGA和CPLD的市场表现存在明显差异：
+
+\begin{itemize}
+\tightlist
+\item
+    \textbf{FPGA}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    2022年市场规模：80亿美元
+    \item
+    主要厂商：赛灵思（现隶属于AMD）、英特尔（Altera系列）、紫光同创、复旦微电子
+    \end{itemize}
+\item
+    \textbf{CPLD}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    2022年市场规模：10亿美元
+    \item
+    主要厂商：莱迪思半导体、微芯科技
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[allowframebreaks]{\textbf{FPGA与CPLD的市场驱动因素}}
+\begin{block}{\textbf{FPGA市场驱动因素}}
+\begin{enumerate}
+\tightlist
+\item
+    \textbf{5G通信的普及}: 5G基站和网络设备对高性能FPGA的需求大幅增加。\\
+\item
+    \textbf{数据中心与AI加速}:
+    FPGA在数据中心中用于AI加速、云计算和边缘计算，需求持续增长。\\
+\item
+    \textbf{汽车电子发展}: 智能驾驶和ADAS系统对FPGA的需求快速上升。\\
+\item
+    \textbf{国产化替代}:
+    国内厂商在FPGA领域的技术进步和国产化政策推动市场增长。
+\end{enumerate}
+\end{block}
+\pagebreak
+\begin{block}{\textbf{CPLD市场驱动因素}}
+\begin{enumerate}
+\tightlist
+\item
+    \textbf{工业控制需求}:
+    CPLD在工业自动化、逻辑控制和接口转换中的应用稳定增长。\\
+\item
+    \textbf{消费电子升级}:
+    显示驱动、电源管理等场景对CPLD的需求保持稳定。\\
+\item
+    \textbf{低成本优势}: CPLD相比FPGA成本更低，适合中小规模逻辑设计。
+\end{enumerate}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{国外FPGA厂家介绍}
+在全球FPGA（现场可编程门阵列）市场中，赛灵思（Xilinx）、\textbf{英特尔（Intel）和莱迪思半导体（Lattice
+Semiconductor）}是三家最具影响力的厂商。它们凭借各自的技术优势和产品布局，占据了FPGA市场的主要份额。
+\end{block}
+\end{frame}
+
+\begin{frame}{赛灵思（Xilinx）}
+公司简介：赛灵思成立于1984年，是FPGA技术的开创者，也是全球FPGA市场的领导者。2022年，赛灵思被AMD收购，进一步增强了其在高性能计算领域的竞争力。
+主要产品：
+
+\begin{itemize}
+\tightlist
+\item
+    Virtex系列：面向高性能计算、数据中心和通信领域，提供高逻辑密度和强大计算能力。
+\item
+    Kintex系列：平衡性能和功耗，适用于工业自动化、医疗设备和视频处理等中端市场。
+\item
+    Artix系列：低功耗、低成本，适合消费电子和嵌入式应用。
+\item
+    Zynq系列：将FPGA与ARM处理器集成，广泛应用于嵌入式系统和物联网设备。
+\end{itemize}
+
+市场占有率：赛灵思长期占据FPGA市场的领先地位，2021年市场占有率约为50\%左右。
+\end{frame}
+
+\begin{frame}{英特尔（Intel）}
+公司简介：英特尔通过2015年收购阿尔特拉（Altera）进入FPGA市场，成为赛灵思的主要竞争对手。英特尔将FPGA技术与其处理器产品线结合，推动其在数据中心和人工智能领域的发展。
+主要产品：
+
+\begin{itemize}
+\tightlist
+\item
+    Stratix系列：高性能FPGA，面向数据中心加速、5G通信和军事应用。
+\item
+    Arria系列：中端FPGA，适用于视频处理、工业自动化和汽车电子。
+\item
+    Cyclone系列：低成本、低功耗FPGA，适合消费电子和物联网设备。
+\item
+    Agilex系列：英特尔最新一代FPGA，采用10nm工艺，支持AI加速和高性能计算。
+\end{itemize}
+
+市场占有率：英特尔（Altera）在FPGA市场的占有率约为35\%，是赛灵思的主要竞争对手。
+\end{frame}
+
+\begin{frame}{莱迪思半导体（Lattice Semiconductor）}
+公司简介：莱迪思半导体成立于1983年，专注于低功耗、小尺寸FPGA市场，主要服务于消费电子、工业和通信领域。
+主要产品：
+
+\begin{itemize}
+\tightlist
+\item
+    iCE系列：超低功耗FPGA，适用于移动设备、物联网和可穿戴设备。
+\item
+    ECP系列：低成本FPGA，面向工业自动化和消费电子。
+\item
+    CrossLink系列：专为视频桥接和传感器接口设计，广泛应用于汽车和工业领域。
+\item
+    MachXO系列：小尺寸FPGA，适合嵌入式系统和通信设备。
+\end{itemize}
+
+市场占有率：莱迪思在FPGA市场的占有率约为5\%-7\%，主要在中低端市场占据一席之地。
+\end{frame}
+
+\begin{frame}{\textbf{FPGA市场竞争格局}}
+\begin{columns}[T]
+\column{0.48\textwidth}
+\begin{block}{\textbf{市场特征}}
+\begin{itemize}
+\scriptsize
+\item \textbf{双头垄断结构}: 赛灵思(Xilinx)和英特尔(Altera)合计市占率达85\%
+\item \textbf{应用驱动}: AI/5G/数据中心催生高端FPGA需求 
+\item \textbf{年增长率}: 维持8\% CAGR至2027年
+\end{itemize}
+\end{block}
+
+\column{0.48\textwidth}
+\begin{block}{\textbf{竞争版图}}
+% \includegraphics[width=\textwidth]{market_share_chart.pdf}  % 建议补充柱状图示意
+\begin{itemize}
+\tiny
+\item 赛灵思：数据中心主导者（49\%）
+\item Intel：5G基础设施领跑（36\%）
+\end{itemize}
+\end{block}
+\end{columns}
+
+\begin{block}{\textbf{厂商动态}}
+\begin{itemize}
+\footnotesize
+\item \textcolor{blue}{\textbf{头部厂商}}: 
+  - 赛灵思(AMD)重点布局AI推理加速
+  - 英特尔聚焦5G基站优化方案
+  
+\item \textcolor{green}{\textbf{差异化竞争}}: 
+  - 莱迪思半导体(Lattice)专注低功耗FPGA
+  - 产品尺寸缩小40\%，功耗降低30\%
+
+\item \textcolor{orange}{\textbf{新兴力量}}: 
+  - Achronix新型FPGA架构Speedster7t
+  - 国产厂商突破28nm工艺
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}[allowframebreaks]{国内FPGA厂家介绍}
+\begin{block}{1. \textbf{紫光同创 (Pango Micro)}}
+\begin{itemize}
+\tightlist
+\item
+    \textbf{简介}:
+    紫光同创是紫光集团旗下的FPGA设计公司，专注于高性能FPGA芯片的研发与生-
+    \textbf{产品}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    Logos系列：中低端FPGA，适用于消费电子、工业控制等领域。\\
+    \item
+    Titan系列：高端FPGA，面向通信、数据中心等高性能场景。\\
+    \end{itemize}
+\item
+    \textbf{优势}: 国产化程度高，性价比优势明显，生态逐步完善。
+\end{itemize}
+\end{block}
+\pagebreak
+\begin{block}{2. \textbf{复旦微电子 (Fudan Microelectronics)}}
+\begin{itemize}
+\tightlist
+\item
+    \textbf{简介}:
+    复旦微电子是国内领先的集成电路设计企业，FPGA是其重要业务之一。
+\item
+    \textbf{产品}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    FMQL系列：基于ARM+FPGA架构的SoC芯片，适用于嵌入式系统。\\
+    \item
+    FPGA系列：覆盖中低端市场，应用于工业控制、医疗设备等领域。\\
+    \end{itemize}
+\item
+    \textbf{优势}: 技术积累深厚，产品线丰富，支持国产化替代。
+\end{itemize}
+\end{block}
+\pagebreak
+\begin{block}{3. \textbf{安路科技 (Anlogic)}}
+\begin{itemize}
+\tightlist
+\item
+    \textbf{简介}:
+    安路科技是一家专注于FPGA芯片设计的高科技企业，致力于提供高性能、低功耗的FPGA解决方案。
+\item
+    \textbf{产品}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    Eagle系列：低功耗FPGA，适用于物联网、可穿戴设备等场景。\\
+    \item
+    Phoenix系列：高性能FPGA，面向通信、视频处理等领域。\\
+    \end{itemize}
+\item
+    \textbf{优势}: 低功耗设计突出，产品性能稳定，生态逐步完善。
+\end{itemize}
+\end{block}
+\pagebreak
+\begin{block}{4. \textbf{高云半导体 (Gowin Semiconductor)}}
+\begin{itemize}
+\tightlist
+\item
+    \textbf{简介}:
+    高云半导体是国内新兴的FPGA设计公司，专注于中小容量FPGA市场。
+\item
+    \textbf{产品}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+    LittleBee系列：低成本FPGA，适用于消费电子、工业控制等领域。\\
+    \item
+    Arora系列：中端FPGA，面向通信、视频处理等场景。\\
+    \end{itemize}
+\item
+    \textbf{优势}: 产品性价比高，开发工具易用，生态逐步完善。
+\end{itemize}
+\end{block}
+\pagebreak
+国内FPGA厂家近年来发展迅速，产品覆盖从低端到高端的多个市场，逐步缩小与国际巨头的差距。随着国产化替代需求的增加，这些厂家在技术研发、生态建设等方面不断取得突破，未来有望在全球FPGA市场中占据更重要的地位。
+\end{frame}
+
+\section{FPGA与CPLD的未来趋势}
+\begin{frame}[allowframebreaks]{\textbf{FPGA与CPLD的未来趋势}}
+\begin{block}{\textbf{FPGA未来趋势}}
+\begin{enumerate}
+\tightlist
+\item
+    \textbf{高性能与低功耗结合}:
+    FPGA将向更高性能、更低功耗的方向发展，满足数据中心和AI应用的需求。\\
+\item
+    \textbf{异构计算}:
+    FPGA与CPU、GPU的协同计算将成为主流，推动FPGA在异构计算中的应用。\\
+\item
+    \textbf{国产化加速}:
+    国内FPGA厂商将逐步扩大市场份额，推动国产化替代进程。
+\end{enumerate}
+\end{block}
+
+\begin{block}{\textbf{CPLD未来趋势}}
+\begin{enumerate}
+\tightlist
+\item
+    \textbf{小型化与集成化}:
+    CPLD将向更小型化、更高集成度的方向发展，满足消费电子和工业控制的需求。\\
+\item
+    \textbf{低成本解决方案}:
+    CPLD将继续作为低成本、低功耗的逻辑解决方案，在特定领域保持竞争力。\\
+\item
+    \textbf{新兴应用拓展}:
+    CPLD在物联网、智能家居等新兴领域的应用有望逐步增加。
+\end{enumerate}
+\end{block}
+\end{frame}
+        
+
+% 结尾页
+\begin{frame}
+\centering
+\frametitle{谢谢！}
+感谢聆听！
+\end{frame}
+
+\end{document}
