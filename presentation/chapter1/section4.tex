@@ -33,21 +33,9 @@
     \begin{enumerate}
     \tightlist
     \item
-    \textbf{基于 SRAM 的 FPGA}:
-
-    \begin{itemize}
-    \tightlist
+    \textbf{基于 SRAM 的 FPGA}:主要厂商：Xilinx 和 Altera，AT\&T 是主要竞争对手。
     \item
-        主要厂商：Xilinx 和 Altera，AT\&T 是主要竞争对手。
-    \end{itemize}
-    \item
-    \textbf{基于反熔丝的 FPGA}:
-
-    \begin{itemize}
-    \tightlist
-    \item
-        主要厂商：Actel、Quicklogic、Cypress 和 Xilinx。
-    \end{itemize}
+    \textbf{基于反熔丝的 FPGA}:主要厂商：Actel、Quicklogic、Cypress 和 Xilinx。
     \end{enumerate}
 \end{itemize}
 \end{frame}
@@ -245,7 +233,6 @@
 
 \begin{frame}[allowframebreaks]{\textbf{输入/输出块}}
 \begin{block}{\textbf{简介}}
-\phantomsection\label{ux7b80ux4ecb}
 \begin{itemize}
 \tightlist
 \item
@@ -258,7 +245,6 @@
 \end{block}
 
 \begin{block}{\textbf{电压与引脚数量}}
-\phantomsection\label{ux7535ux538bux4e0eux5f15ux811aux6570ux91cf}
 \begin{itemize}
 \tightlist
 \item
@@ -273,7 +259,6 @@
 \end{block}
 
 \begin{block}{\textbf{引脚模式}}
-\phantomsection\label{ux5f15ux811aux6a21ux5f0f}
 \begin{enumerate}
 \tightlist
 \item
@@ -286,7 +271,6 @@
 \end{block}
 
 \begin{block}{\textbf{引脚分组与模式}}
-\phantomsection\label{ux5f15ux811aux5206ux7ec4ux4e0eux6a21ux5f0f}
 \begin{itemize}
 \tightlist
 \item
@@ -327,7 +311,6 @@
 \end{block}
 
 \begin{block}{\textbf{输出模式}}
-\phantomsection\label{ux8f93ux51faux6a21ux5f0f}
 \begin{itemize}
 \tightlist
 \item
@@ -360,7 +343,6 @@
 \end{itemize}
 
 \begin{block}{\textbf{多路复用器}}
-\phantomsection\label{ux591aux8defux590dux7528ux5668}
 \begin{itemize}
 \tightlist
 \item
@@ -423,7 +405,6 @@
 \end{block}
 
 \begin{block}{\textbf{查找表（LUT）}}
-\phantomsection\label{ux67e5ux627eux8868lut}
 \begin{itemize}
 \tightlist
 \item
@@ -485,7 +466,6 @@
 \end{frame}
 
 \begin{frame}{\textbf{块 RAM}}
-\phantomsection\label{ux5757-ram}
 \begin{itemize}
 \tightlist
 \item
@@ -516,7 +496,6 @@
 \end{frame}
 
 \begin{frame}{\textbf{DSP 切片}}
-\phantomsection\label{dsp-ux5207ux7247}
 \begin{itemize}
 \tightlist
 \item
@@ -555,7 +534,6 @@
 \end{frame}
 
 \begin{frame}{\textbf{时钟管理}}
-\phantomsection\label{ux65f6ux949fux7ba1ux7406}
 \begin{itemize}
 \tightlist
 \item
@@ -590,8 +568,7 @@
 \end{frame}
 
 \subsection{Altera FPGA}
-\begin{frame}{\textbf{Altera FLEX 8000}}
-\phantomsection\label{altera-flex-8000}
+\begin{frame}[allowframebreaks]{\textbf{Altera FLEX 8000}}
 \begin{itemize}
 \tightlist
 \item
@@ -611,8 +588,12 @@
     \end{itemize}
 \end{itemize}
 
-\includegraphics[width=0.5\textwidth]{img1/FLEX800.jpeg}
-\textbf{图12:} \emph{Altera FLEX 8000 FPGA 架构。}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.7\textwidth]{img1/FLEX800.jpeg}
+    \caption{Altera FLEX 8000 FPGA 架构。}
+\end{figure}
+
 \end{frame}
 
 \begin{frame}{\textbf{XADC 模块}}
@@ -639,36 +620,29 @@
 \end{itemize}
 \end{frame}
 
-\begin{frame}
-\begin{itemize}
-\tightlist
-\item
-    \textbf{FLEX 8000 架构}:
-
+\begin{frame}{\textbf{FLEX 8000 架构}}
     \begin{itemize}
     \tightlist
     \item
-    如图13所示，FLEX 8000 的基本逻辑块称为\textbf{逻辑元素（Logic
+    FLEX 8000 的基本逻辑块称为\textbf{逻辑元素（Logic
     Element, LE）}，包含一个 4 输入
     LUT、一个触发器以及用于算术电路的特殊进位电路（类似于 Xilinx
     XC4000）。
     \item
     LE 还包括级联电路，可高效实现宽与函数。
     \item
-    \textbf{LE 细节}: 如图21所示。
+    \textbf{LE 细节}: 如图下图所示。
     \end{itemize}
-\end{itemize}
 
-\includegraphics[keepaspectratio]{img1/FLEX800LE.jpeg}
-\textbf{图13:} \emph{Altera FLEX 8000 逻辑单元（LE）。}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{img1/FLEX800LE.jpeg}
+    \caption{FLEX 8000 逻辑单元（LE）}
+\end{figure}
+
 \end{frame}
 
-\begin{frame}
-\begin{itemize}
-\tightlist
-\item
-    \textbf{逻辑阵列块（LAB）}:
-
+\begin{frame}[allowframebreaks]{\textbf{逻辑阵列块（LAB）}}
     \begin{itemize}
     \tightlist
     \item
@@ -686,49 +660,46 @@
     \textbf{特点}: FLEX 8000 只有长线，这使得 CAD
     工具能够自动配置，且互连延迟比使用许多小段线的 FPGA 更可预测。
     \end{itemize}
-\end{itemize}
 
-\includegraphics[keepaspectratio]{img1/FLEX800LAB.jpeg}
-\textbf{图14:} \emph{Altera FLEX 8000 逻辑阵列块（LAB）。}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.5\textwidth]{img1/FLEX800LAB.jpeg}
+        \caption{Altera FLEX 8000 逻辑阵列块（LAB）}
+    \end{figure}    
+
 \end{frame}
 
-\begin{frame}
+\begin{frame}[allowframebreaks]{\textbf{FLEX 10000 系列}}
 \begin{itemize}
 \tightlist
 \item
-    \textbf{FLEX 10000 系列}:
+FLEX 10000 是对 FLEX 8000 架构的扩展，增加了可变大小的 SRAM
+块，称为\textbf{嵌入式阵列块（Embedded Array Blocks, EABs）}。
+\item
+\textbf{EAB 功能}:
 
-    \begin{itemize}
-    \tightlist
-    \item
-    FLEX 10000 是对 FLEX 8000 架构的扩展，增加了可变大小的 SRAM
-    块，称为\textbf{嵌入式阵列块（Embedded Array Blocks, EABs）}。
-    \item
-    \textbf{EAB 功能}:
-
-    \begin{itemize}
-    \tightlist
-    \item
-        可以配置为具有可变宽高比的 SRAM 块：256 x 8、512 x 4、1K x 2 或 2K
-        x 1。
-    \item
-        也可以配置为实现复杂逻辑电路（如乘法器），作为大型多输出查找表使用。
-    \end{itemize}
-    \item
-    \textbf{CAD 工具支持}: Altera 提供了多个宏函数，用于在 EAB
-    中实现有用的逻辑电路。
-    \item
-    \textbf{逻辑容量}: 目前 FPGA 中最高，但难以提供准确数字。
-    \end{itemize}
+\begin{itemize}
+\tightlist
+\item
+    可以配置为具有可变宽高比的 SRAM 块：256 x 8、512 x 4、1K x 2 或 2K
+    x 1。
+\item
+    也可以配置为实现复杂逻辑电路（如乘法器），作为大型多输出查找表使用。
 \end{itemize}
-
-\includegraphics[keepaspectratio]{img1/FLEX10K.jpeg}
-\textbf{图15：} \emph{Altera FLEX 10K FPGA 架构。}
+\item
+\textbf{CAD 工具支持}: Altera 提供了多个宏函数，用于在 EAB
+中实现有用的逻辑电路。
+\item
+\textbf{逻辑容量}: 目前 FPGA 中最高，但难以提供准确数字。
+\end{itemize}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{img1/FLEX10K.jpeg}
+    \caption{Altera FLEX 10K FPGA 架构。}
+\end{figure}
 \end{frame}
 
-\begin{frame}
-\begin{block}{\textbf{FPGA 的应用}}
-\phantomsection\label{fpga-ux7684ux5e94ux7528}
+\begin{frame}[allowframebreaks]{\textbf{FPGA 的应用}}
 \begin{itemize}
 \tightlist
 \item
@@ -781,13 +752,7 @@
         和必要软件的产品，用于电路的分区和映射。
     \end{itemize}
     \end{itemize}
-\end{itemize}
-\end{block}
-\end{frame}
 
-\begin{frame}
-\begin{itemize}
-\tightlist
 \item
     \textbf{定制计算}:
 
@@ -828,19 +793,12 @@
 \end{itemize}
 \end{frame}
 
-\begin{frame}
-\begin{block}{\textbf{基于 FPGA 的数字系统设计哲学}}
-\phantomsection\label{ux57faux4e8e-fpga-ux7684ux6570ux5b57ux7cfbux7edfux8bbeux8ba1ux54f2ux5b66}
-\begin{itemize}
-\tightlist
-\item
-    数字系统可以通过不同的设计策略和资源实现。本节讨论使用 FPGA
-    进行数字系统设计的哲学，强调如何有效地使用 FPGA。
-\end{itemize}
-\end{block}
+\begin{frame}[allowframebreaks]{\textbf{基于 FPGA 的数字系统设计哲学}}
+    数字系统可以通过不同的设计策略和资源实现。
+
+
 
 \begin{block}{\textbf{使用 FPGA 时的思考方式}}
-\phantomsection\label{ux4f7fux7528-fpga-ux65f6ux7684ux601dux8003ux65b9ux5f0f}
 \begin{itemize}
 \tightlist
 \item
@@ -858,9 +816,9 @@
     可以在初始设计完成后重新配置，用户可以利用这一特性在设计和嵌入设备后改进和修改设计。
 \end{itemize}
 \end{block}
+\end{frame}
 
-\begin{block}{\textbf{FPGA 的优缺点}}
-\phantomsection\label{fpga-ux7684ux4f18ux7f3aux70b9}
+\begin{frame}{\textbf{FPGA 的优缺点}}
 \begin{itemize}
 \tightlist
 \item
@@ -877,19 +835,10 @@
     都具有可重构性和紧凑性，但微控制器的指令集限制了其灵活性，且功率消耗较高。FPGA
     具有并行实现能力，操作速度更快，且可以在 FPGA 上实现微控制器。
 \end{itemize}
-\end{block}
-
-\begin{block}{\textbf{FPGA 的用途}}
-\phantomsection\label{fpga-ux7684ux7528ux9014}
-FPGA 可以用于几乎所有需要数字系统的领域。为了激励读者并说明学习基于 FPGA
-的数字设计的重要性，以下列出 FPGA
-的潜在应用领域：航空航天、汽车、广播、消费电子、国防、高性能计算、工业应用、医疗应用以及有线和无线通信。这些并非
-FPGA 的唯一应用领域，新的应用可能会随着时间的推移而出现。
-\end{block}
 \end{frame}
 
+\subsection{FPGA 与 CPLD 的主要区别}
 \begin{frame}{FPGA与CPLD的主要区别有}
-\phantomsection\label{fpgaux4e0ecpldux7684ux4e3bux8981ux533aux522bux6709}
 \begin{enumerate}
 \tightlist
 \item
@@ -935,9 +884,7 @@ FPGA 的唯一应用领域，新的应用可能会随着时间的推移而出现
 \end{enumerate}
 \end{frame}
 
-\begin{frame}
-\begin{block}{选型建议}
-\phantomsection\label{ux9009ux578bux5efaux8bae}
+\begin{frame}{选型建议}
 \begin{itemize}
 \tightlist
 \item
@@ -946,10 +893,9 @@ FPGA 的唯一应用领域，新的应用可能会随着时间的推移而出现
 \item
     \textbf{选择 CPLD}：要求低功耗、快速启动、确定性延迟和小型逻辑控制。
 \end{itemize}
-\end{block}
+\end{frame}
 
-\begin{block}{\textbf{习题}}
-\phantomsection\label{ux4e60ux9898}
+\begin{frame}{\textbf{习题}}
 \begin{itemize}
 \tightlist
 \item
@@ -987,5 +933,4 @@ FPGA 的唯一应用领域，新的应用可能会随着时间的推移而出现
 \item
     \textbf{6} 微控制器和 FPGA 的主要区别是什么？
 \end{itemize}
-\end{block}
 \end{frame}
