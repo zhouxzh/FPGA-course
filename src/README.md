@@ -17,6 +17,10 @@ actions:
     icon: list-check
     link: ./book/README.md
 
+  - text: 实验教程
+    icon: list-check
+    link: ./experiment/README.md
+
 highlights:
   - header: 课程特色
     # image: /assets/image/fpga-feature.svg

@@ -1,4 +1,13 @@
-# 前言
+---
+title: "第0讲：前言"
+author: [周贤中]
+date: 2025-03-30
+subject: "Markdown"
+keywords: [FPGA, 系统设计]
+lang: "zh-cn"
+...
+
+---
 
 ## PLD的概念
 

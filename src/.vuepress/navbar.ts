@@ -9,4 +9,10 @@ export default navbar([
     icon: "book",
     activeMatch: "^/book/"
   },
+  {
+    text: "实验教程",
+    link: "/experiment/",
+    icon: "experiment",
+    activeMatch: "^/experiment/"
+  },
 ]);

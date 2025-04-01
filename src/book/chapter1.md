@@ -1,7 +1,7 @@
 ---
-title: "FPGA与CPLD架构基础"
+title: "第1讲：FPGA与CPLD架构基础"
 author: [周贤中]
-date: "2025-02-22"
+date: 2025-03-30
 subject: "Markdown"
 keywords: [FPGA, 系统设计]
 lang: "zh-cn"

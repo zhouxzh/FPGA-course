@@ -22,6 +22,23 @@ export default sidebar({
       ]
     },
     {
+      text: "实验教程",
+      icon: "experiment",
+      prefix: "/experiment/",
+      collapsible: true,
+      children: [
+        "README.md",
+        "chapter1.md",
+        "chapter2.md",
+        "chapter3.md",
+        "chapter4.md",
+        "chapter5.md", 
+        "chapter6.md",
+        "chapter7.md",
+        "chapter8.md"
+      ]
+    },
+    {
       text: "幻灯片",
       icon: "person-chalkboard",
       link: "https://ecosystem.vuejs.press/zh/plugins/markdown/revealjs/demo.html",
