@@ -1,56 +1,2657 @@
-\documentclass{beamer}
+%%
+% Copyright (c) 2017 - 2025, Pascal Wagler;
+% Copyright (c) 2014 - 2025, John MacFarlane
+%
+% All rights reserved.
+%
+% Redistribution and use in source and binary forms, with or without
+% modification, are permitted provided that the following conditions
+% are met:
+%
+% - Redistributions of source code must retain the above copyright
+% notice, this list of conditions and the following disclaimer.
+%
+% - Redistributions in binary form must reproduce the above copyright
+% notice, this list of conditions and the following disclaimer in the
+% documentation and/or other materials provided with the distribution.
+%
+% - Neither the name of John MacFarlane nor the names of other
+% contributors may be used to endorse or promote products derived
+% from this software without specific prior written permission.
+%
+% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+% "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+% LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+% FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+% COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+% INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+% BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+% LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+% CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+% LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+% ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+% POSSIBILITY OF SUCH DAMAGE.
+%%
 
-% 使用 xelatex 编译，引入 xeCJK 包支持中文
-\usepackage[UTF8]{ctex}
-\usepackage{fontspec}
-\setmainfont{SimSun} % 设置中文字体为宋体
-\usepackage{tabularx}
-\usepackage{tikz}
-
-
-% 主题设置
-\usetheme{Dresden}
-\usecolortheme{default}
-
+%%
+% This is the Eisvogel pandoc LaTeX template.
+%
+% For usage information and examples visit the official GitHub page:
+% https://github.com/Wandmalfarbe/pandoc-latex-template
+%%
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names,table}{xcolor}
+\PassOptionsToPackage{space}{xeCJK}
+\documentclass[
+  ignorenonframetext,
+  chinese,
+]{beamer}
+\newif\ifbibliography
+\usepackage{pgfpages}
+\setbeamertemplate{caption}[numbered]
+\setbeamertemplate{caption label separator}{: }
+\setbeamercolor{caption name}{fg=normal text.fg}
+\beamertemplatenavigationsymbolsempty
+% remove section numbering
+\setbeamertemplate{part page}{
+  \centering
+  \begin{beamercolorbox}[sep=16pt,center]{part title}
+    \usebeamerfont{part title}\insertpart\par
+  \end{beamercolorbox}
+}
+\setbeamertemplate{section page}{
+  \centering
+  \begin{beamercolorbox}[sep=12pt,center]{section title}
+    \usebeamerfont{section title}\insertsection\par
+  \end{beamercolorbox}
+}
+\setbeamertemplate{subsection page}{
+  \centering
+  \begin{beamercolorbox}[sep=8pt,center]{subsection title}
+    \usebeamerfont{subsection title}\insertsubsection\par
+  \end{beamercolorbox}
+}
+% Prevent slide breaks in the middle of a paragraph
+\widowpenalties 1 10000
+\raggedbottom
+\AtBeginPart{
+  \frame{\partpage}
+}
+\AtBeginSection{
+  \ifbibliography
+  \else
+    \frame{\sectionpage}
+  \fi
+}
+\AtBeginSubsection{
+  \frame{\subsectionpage}
+}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+  \ifXeTeX
+    \usepackage{xeCJK}
+    \setCJKmainfont[]{Microsoft YaHei}
+          \fi
+  \ifLuaTeX
+    \usepackage[]{luatexja-fontspec}
+    \setmainjfont[]{Microsoft YaHei}
+  \fi
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+% Use setspace anyway because we change the default line spacing.
+% The spacing is changed early to affect the titlepage and the TOC.
+\usepackage{setspace}
+\setstretch{1.2}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{listings}
+\newcommand{\passthrough}[1]{#1}
+\lstset{defaultdialect=[5.3]Lua}
+\lstset{defaultdialect=[x86masm]Assembler}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+% Make use of float-package and set default placement for figures to H.
+% The option H means 'PUT IT HERE' (as  opposed to the standard h option which means 'You may put it here if you like').
+\usepackage{float}
+\floatplacement{figure}{H}
+\makeatother
+\ifLuaTeX
+\usepackage[bidi=basic]{babel}
+\else
+\usepackage[bidi=default]{babel}
+\fi
+\babelprovide[main,import]{chinese}
+% get rid of language-specific shorthands (see #6817):
+\let\LanguageShortHands\languageshorthands
+\def\languageshorthands#1{}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
 \providecommand{\tightlist}{%
   \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\definecolor{default-linkcolor}{HTML}{A50000}
+\definecolor{default-filecolor}{HTML}{A50000}
+\definecolor{default-citecolor}{HTML}{4077C0}
+\definecolor{default-urlcolor}{HTML}{4077C0}
 
-% 标题页信息
-\title{FPGA系统设计}
-\subtitle{FPGA与CPLD的架构基础}
+\hypersetup{
+  pdftitle={FPGA与CPLD架构基础},
+  pdfauthor={周贤中},
+  pdflang={zh-cn},
+  pdfsubject={Markdown},
+  pdfkeywords={FPGA, 系统设计},
+  hidelinks,
+  breaklinks=true,
+  pdfcreator={LaTeX via pandoc with the Eisvogel template}}
+\title{FPGA与CPLD架构基础}
 \author{周贤中}
-\institute{广东工业大学集成电路学院}
-\date{\today}
+\date{2025-02-22}
 
-% 文档内容
 \begin{document}
+\frame{\titlepage}
 
-% 标题页
 \begin{frame}
-\titlepage
+这一章主要对当前市场上可编程逻辑器件的架构进行了系统性的综述和讲解。
+首先，我们定义了该领域的相关术语，并阐述了可编程逻辑器件近年来的发展历程。
+随后，我们重点介绍复杂可编程逻辑器件（CPLDs）以及现场可编程门阵列（FPGAs）的基本架构。接下来，我们详细介绍了所有主流商用芯片的架构，并为每种类型的器件提供了实际应用案例。
 \end{frame}
 
-% 目录页
-\begin{frame}
-\frametitle{目录}
-\tableofcontents
+\begin{frame}{基本概念}
+\phantomsection\label{ux57faux672cux6982ux5ff5}
+\begin{itemize}
+\item
+  \textbf{FPGA}（Field-Programmable Gate Array）\\
+  基于查找表（LUT）结构的可编程逻辑器件，支持高密度逻辑资源、复杂时序设计和大规模并行处理。
+\item
+  \textbf{CPLD}（Complex Programmable Logic Device）\\
+  基于乘积项（Product-Term）结构的可编程逻辑器件，适合简单逻辑控制和组合电路设计。
+\end{itemize}
 \end{frame}
 
-% \section{FPGA与CPLD的基本概念}
+\begin{frame}{可编程逻辑器件发展历史}
+\phantomsection\label{ux53efux7f16ux7a0bux903bux8f91ux5668ux4ef6ux53d1ux5c55ux5386ux53f2}
+\begin{block}{可编程逻辑器件（FPDs）的发展与分类}
+\phantomsection\label{ux53efux7f16ux7a0bux903bux8f91ux5668ux4ef6fpdsux7684ux53d1ux5c55ux4e0eux5206ux7c7b}
+\begin{block}{早期可编程逻辑器件}
+\phantomsection\label{ux65e9ux671fux53efux7f16ux7a0bux903bux8f91ux5668ux4ef6}
+\begin{block}{\textbf{Programmable Read-Only Memory (PROM)}:}
+\phantomsection\label{programmable-read-only-memory-prom}
+\begin{itemize}
+\tightlist
+\item
+  这是第一种能够实现逻辑电路的用户可编程芯片。
+\item
+  地址线可用作逻辑电路输入，数据线可用作输出。
+\item
+  缺点:
 
+  \begin{itemize}
+  \tightlist
+  \item
+    逻辑函数通常只需要较少的乘积项，而 PROM 的地址输入具有完整的译码器。
+  \item
+    这种架构在实现逻辑电路时效率较低，因此在实践中很少用于该目的。
+  \end{itemize}
+\end{itemize}
+\end{block}
+\end{block}
+\end{block}
+\end{frame}
 
-
-\include{section1}
-\include{section2}
-\include{section3}
-\include{section4}
-
-
-% 结尾页
 \begin{frame}
+\begin{block}{\textbf{Field-Programmable Logic Array (FPLA) / PLA}:}
+\phantomsection\label{field-programmable-logic-array-fpla-pla}
+\begin{itemize}
+\tightlist
+\item
+  这是后来专门为实现逻辑电路而设计的第一个器件。
+\item
+  PLA 由两级逻辑门组成：
+
+  \begin{itemize}
+  \tightlist
+  \item
+    可编程的``线与''与门平面。
+  \item
+    可编程的``线或''或门平面。
+  \end{itemize}
+\item
+  任何输入（或其补码）都可以在与门平面进行与操作，每个与门输出可以对应输入的任何乘积项。
+\item
+  每个或门输出可以配置为与门输出的逻辑和。
+\item
+  优点:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    非常适合实现积之和形式的逻辑函数。
+  \item
+    与门和或门都可以有多个输入，具有较高的灵活性。
+  \end{itemize}
+\item
+  缺点:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    制造成本高。
+  \item
+    速度性能较差，因为可编程逻辑平面难以制造且引入了显著的传播延迟。
+  \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{Programmable Array Logic (PAL)}:}
+\phantomsection\label{programmable-array-logic-pal}
+\begin{itemize}
+\tightlist
+\item
+  为克服 PLA 的缺点，PAL 被开发出来。
+\item
+  结构:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    仅包含一个可编程的``线与''与门平面，后接固定的或门。
+  \item
+    为了弥补或门固定的局限性，产生了多种 PAL
+    变体，具有不同的输入输出数量和或门大小。
+  \end{itemize}
+\item
+  特点:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    通常包含连接到或门输出的触发器，以实现时序电路。
+  \item
+    对数字硬件设计产生了深远影响，并为更复杂的架构奠定了基础。
+  \end{itemize}
+\end{itemize}
+
+\pandocbounded{\includegraphics[keepaspectratio]{img1/PAL.jpeg}}\\
+\textbf{图1：PAL（可编程阵列逻辑）结构示意图}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{简单可编程逻辑器件（SPLDs）}
+\phantomsection\label{ux7b80ux5355ux53efux7f16ux7a0bux903bux8f91ux5668ux4ef6splds}
+\begin{itemize}
+\tightlist
+\item
+  包括 PLA、PAL 和类似 PAL 的器件。
+\item
+  主要特点:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    低成本。
+  \item
+    极高的引脚到引脚速度性能。
+  \end{itemize}
+\end{itemize}
+\end{block}
+
+\begin{block}{复杂可编程逻辑器件（CPLDs）}
+\phantomsection\label{ux590dux6742ux53efux7f16ux7a0bux903bux8f91ux5668ux4ef6cplds}
+\begin{itemize}
+\tightlist
+\item
+  随着技术进步，SPLD 的容量限制使得 CPLD 应运而生。
+\item
+  结构:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    将多个 SPLD 集成到单个芯片上，并通过可编程互连将它们连接起来。
+  \end{itemize}
+\item
+  发展:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    由 Altera 首创，推出 Classic EPLDs、MAX 5000、MAX 7000 和 MAX 9000
+    系列。
+  \end{itemize}
+\item
+  逻辑容量:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    相当于约 50 个典型 SPLD 器件，但难以扩展到更高密度。
+  \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{可编程门阵列（FPGAs）}
+\phantomsection\label{ux53efux7f16ux7a0bux95e8ux9635ux5217fpgas}
+\begin{enumerate}
+\tightlist
+\item
+  \textbf{Mask-Programmable Gate Arrays (MPGAs)}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    传统门阵列，由预制的晶体管阵列组成，通过定制金属互连实现用户逻辑电路。
+  \item
+    缺点:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      定制化涉及高昂的设置成本和较长的制造时间。
+    \end{itemize}
+  \end{itemize}
+\item
+  \textbf{Field-Programmable Gate Arrays (FPGAs)}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    类似于 MPGA，但配置由最终用户通过编程完成。
+  \item
+    结构:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      由未指定的电路元件（称为逻辑块）和互连资源组成。
+    \end{itemize}
+  \item
+    优势:
+  \end{itemize}
+\end{enumerate}
+
+\pandocbounded{\includegraphics[keepaspectratio]{img1/FPGA.jpeg}}
+\textbf{图2：} \emph{FPGA结构图.}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{PLD 分类与逻辑容量}
+\phantomsection\label{pld-ux5206ux7c7bux4e0eux903bux8f91ux5bb9ux91cf}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{SPLDs}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    容量最低，适合简单逻辑应用。
+  \end{itemize}
+\item
+  \textbf{CPLDs}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    中等容量，适合中等复杂度设计。
+  \end{itemize}
+\item
+  \textbf{FPGAs}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    最高容量，适合复杂逻辑设计。
+  \end{itemize}
+\item
+  选择依据:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    根据应用所需的逻辑容量。
+  \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{其他特殊用途器件}
+\phantomsection\label{ux5176ux4ed6ux7279ux6b8aux7528ux9014ux5668ux4ef6}
+\begin{itemize}
+\tightlist
+\item
+  针对特定应用（如状态机、模拟门阵列、大规模互连问题）优化的器件。
+\item
+  由于应用范围有限，此处不做详述。
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}{可编程逻辑器件典型工艺}
+\phantomsection\label{ux53efux7f16ux7a0bux903bux8f91ux5668ux4ef6ux5178ux578bux5de5ux827a}
+\begin{block}{反熔丝技术概述}
+\phantomsection\label{ux53cdux7194ux4e1dux6280ux672fux6982ux8ff0}
+\begin{block}{\textbf{起源与发展}:}
+\phantomsection\label{ux8d77ux6e90ux4e0eux53d1ux5c55}
+\begin{itemize}
+\tightlist
+\item
+  该项目由美国斯坦福大学发明。
+\item
+  第一种开发出来的用户可编程开关是
+  \textbf{熔丝}，广泛应用于可编程逻辑阵列（PLA）中。
+\item
+  由 \textbf{Actel} 公司开发，该公司后被 \textbf{Microsemi} 公司收购，而
+  \textbf{Microsemi} 公司又被 \textbf{Microchip}
+  公司收购。\pandocbounded{\includegraphics[keepaspectratio]{img1/antifuse.jpeg}}
+\end{itemize}
+\end{block}
+
+\begin{block}{\textbf{反熔丝基础特性}:}
+\phantomsection\label{ux53cdux7194ux4e1dux57faux7840ux7279ux6027}
+\begin{itemize}
+\tightlist
+\item
+  在初始状态下是开路的。
+\item
+  只有在编程后才会呈现低电阻特性。
+\item
+  适用于FPGA，可通过改进的CMOS技术实现。
+\end{itemize}
+\end{block}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{技术实现}:}
+\phantomsection\label{ux6280ux672fux5b9eux73b0}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{PLICE结构}（由Actel公司开发）\footnote<.->[frame]{E. Hamdy et
+    al, ``Dielectric-based antifuse for logic and memory ICs,'' IEEE
+    International Electron Devices Meeting Technical Digest, pp.~786 -
+    789, 1988.} :
+
+  \begin{itemize}
+  \tightlist
+  \item
+    位于两条互连导线之间。
+  \item
+    由三层结构组成：
+
+    \begin{itemize}
+    \tightlist
+    \item
+      顶层和底层为导体（多晶硅和n+扩散层）。
+    \item
+      中间层为绝缘体（ONO，氧化物-氮化物-氧化物）。
+    \end{itemize}
+  \item
+    未编程状态：绝缘体隔离顶层和底层。
+  \item
+    编程状态：绝缘体转变为低电阻连接。
+  \end{itemize}
+\item
+  \textbf{其他反熔丝结构}\footnote<.->[frame]{J. Birkner et al, ``A
+    very-high-speed field-programmable gate array using metal-tometal
+    antifuse programmable elements,'' Microelectronics Journal, v. 23,
+    pp.~561-568}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    采用金属作为导体。
+  \item
+    中间层为非晶硅。
+  \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{PLICE反熔丝的特性与应用}
+\phantomsection\label{pliceux53cdux7194ux4e1dux7684ux7279ux6027ux4e0eux5e94ux7528}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{尺寸与电气性能优势}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    反熔丝足够小，可以适应通道布线轨迹的宽度，\textbf{PLICE}
+    反熔丝在尺寸和电气性能方面具有关键优势。
+  \item
+    这意味着反熔丝本身基本上不会产生芯片尺寸开销。
+  \end{itemize}
+\item
+  \textbf{架构突破}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \textbf{PLICE} 反熔丝的小尺寸和低延迟特性，使得 \textbf{Actel}
+    在以下两个关键架构上取得突破：
+
+    \begin{itemize}
+    \tightlist
+    \item
+      提供丰富的布线资源，同时保持非常小的芯片尺寸。
+    \item
+      提供高度灵活、高度精细的架构（如小的逻辑块）。
+    \end{itemize}
+  \end{itemize}
+\item
+  \textbf{一次性编程特性}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    采用这种工艺的可编程逻辑器件（PLD）一旦编程后，其内部连接关系将永久固化，无法再修改。
+  \item
+    由于是一次性器件，一旦编程失败或设计出现缺陷，整个器件将报废，必须重新采购新的器件。
+  \item
+    这导致设计成本较高。
+  \end{itemize}
+\item
+  \textbf{抗干扰与保密性能}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    采用这种工艺的 PLD 具有优异的抗干扰性能和保密性能。
+  \item
+    由于整个设计已经被固化到芯片内，破解芯片内的设计结构异常困难。
+  \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{PROM、EPROM和EEPROM工艺}
+\phantomsection\label{promepromux548ceepromux5de5ux827a}
+\textbf{可编程只读存储器}（\textbf{Programmable Read Only
+Memory}，\textbf{PROM}）是一种可编程逻辑器件。
+
+\textbf{PROM} 内部由固定的逻辑与阵列和可编程的逻辑或阵列构成。
+
+当使用 \textbf{PROM} 时，可以通过最小项求和的方式实现布尔逻辑函数功能
+
+\begin{itemize}
+\tightlist
+\item
+  浮栅晶体管类似于 EPROM 和 EEPROM 中使用的晶体管。
+\item
+  在 CPLD 中，浮栅晶体管被用作可编程开关，并广泛应用于许多 SPLD 中。
+\item
+  实现方式:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    将晶体管放置在两条导线之间，以便实现线与（wired-AND）功能。
+  \item
+    示例:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      图3展示了 EPROM 晶体管在 CPLD 的与门平面中的连接方式。
+    \item
+      如果某个输入是相应乘积项的一部分，则该输入可以通过 EPROM
+      晶体管将与产品线驱逻辑电平``0''。
+    \item
+      对于不参与乘积项的输入，相应的 EPROM 晶体管被编程为永久关闭。
+    \end{itemize}
+  \end{itemize}
+\item
+  EEPROM 器件的工作方式与此类似。
+\end{itemize}
+
+\begin{figure}
 \centering
-\frametitle{谢谢！}
-感谢聆听！
+\pandocbounded{\includegraphics[keepaspectratio]{img1/EPROM.jpeg}}
+\caption{EPROM Programmable Switches}
+\end{figure}
+
+\textbf{图3：} \emph{EPROM可编程开关结构图.}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{SRAM}
+\phantomsection\label{sram}
+\textbf{Xilinx} 公司（被 \textbf{AMD} 公司收购）和 \textbf{Altera}
+公司（被 \textbf{Intel} 公司收购）的绝大多数 \textbf{FPGA} 采用
+\textbf{SRAM} 工艺。
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{SRAM 和反熔丝}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    尽管 EPROM 或 EEPROM 技术理论上也适用于 FPGA，但目前商用 FPGA
+    产品主要基于 SRAM 或反熔丝技术。
+  \end{itemize}
+\item
+  \textbf{SRAM 单元的应用}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    用于控制传输晶体管（pass-transistor）开关的栅极节点。
+  \item
+    用于控制多路复用器（multiplexer）的选择线，从而驱动逻辑块输入。
+  \end{itemize}
+\end{itemize}
+
+\begin{figure}
+\centering
+\pandocbounded{\includegraphics[keepaspectratio]{img1/SRAM.jpeg}}
+\caption{SRAM-controlled Programmable Switches}
+\end{figure}
+
+\textbf{图4：} \emph{SRAM可编程开关.}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{示例连接}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    图5展示了一个逻辑块（由左上角的与门表示）通过两个传输晶体管开关和一个多路复用器连接到另一个逻辑块的过程。
+  \item
+    所有这些开关和多路复用器都由 SRAM 单元控制。
+  \end{itemize}
+\item
+  \textbf{FPGA 的实现方式}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    FPGA
+    是否使用传输晶体管、多路复用器或两者结合，取决于具体产品的设计。
+  \end{itemize}
+\item
+  只读存储器（Read Only
+  Memory，ROM）采用掩膜工艺，它属于非易失性存储器。
+\item
+  当系统断电后，信息仍然保留在 ROM 内的存储单元中。
+
+  \begin{itemize}
+  \tightlist
+  \item
+    用户可以从掩膜器件中读取信息，但是不能往 ROM 中写入任何信息。
+  \item
+    ROM 单元保存了行和列数据，形成一个阵列，每一列有负载电阻使其保持逻辑
+    1，每个行列的交叉有一个关联晶体管和一个掩膜连接。
+  \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+在采用 SRAM 工艺的 FPGA 中，SRAM 单元主要实现以下三个任务，包括：
+
+\begin{itemize}
+\tightlist
+\item
+  作为查找表（Look-Up Table，LUT）实现逻辑（用作真值表）。
+\item
+  用作嵌入式块存储器资源（比如缓冲区存储）。
+\item
+  用于控制布线和配置开关。
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\begin{itemize}
+\tightlist
+\item
+  采用这种工艺的 PLD 优势主要体现在：
+
+  \begin{itemize}
+  \tightlist
+  \item
+    易于修改（甚至可以动态可重配置）。
+
+    \begin{itemize}
+    \tightlist
+    \item
+      设计者可以对 PLD 进行反复修改和编程。
+    \end{itemize}
+  \item
+    较好的密度。
+  \item
+    跟踪最新的 SRAM 技术（比逻辑技术更快）。
+  \item
+    灵活，实现结构更好。
+
+    \begin{itemize}
+    \tightlist
+    \item
+      不但适用于有限自动状态机，同时也适用于算术电路。
+    \end{itemize}
+  \end{itemize}
+\item
+  采用这种工艺的 PLD 的劣势在于：
+
+  \begin{itemize}
+  \tightlist
+  \item
+    采用这种工艺的 PLD 属于易失性器件。
+
+    \begin{itemize}
+    \tightlist
+    \item
+      只要系统正常供电，器件配置信息就不会丢失；一旦断电，保存在 FPGA
+      内的配置信息将丢失。
+    \item
+      在使用 SRAM 工艺的 FPGA 进行数字系统设计时，需要在 FPGA
+      的外部连接一个存储器芯片来保存器件配置信息的原因。
+    \end{itemize}
+  \item
+    通常具有较大的功耗。
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\begin{block}{SRAM编程技术总结}
+\phantomsection\label{sramux7f16ux7a0bux6280ux672fux603bux7ed3}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{存储机制}：6晶体管单元存储配置位\\
+\item
+  \textbf{技术特征}：
+
+  \begin{itemize}
+  \tightlist
+  \item
+    支持无限次擦写（\textgreater10\^{}15次）\\
+  \item
+    静态功耗约0.5μW/bit\\
+  \item
+    与标准CMOS工艺兼容\\
+  \end{itemize}
+\item
+  \textbf{缺点}：
+
+  \begin{itemize}
+  \tightlist
+  \item
+    存储数据需要消耗大量的硅片面积，且断电后数据信息丢失。
+  \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{FLASH工艺}
+\phantomsection\label{flashux5de5ux827a}
+\pandocbounded{\includegraphics[keepaspectratio]{img1/flash.png}}
+\textbf{图4：} \emph{flash器件结构图}
+
+\begin{itemize}
+\tightlist
+\item
+  真正的基于FLASH工艺的FPGA不应与内部带有FLASH存储器的FPGA类型混淆。\\
+\item
+  具有内部FLASH存储器的基于SRAM的FPGA仅在启动期间使用FLASH存储器将数据加载到SRAM配置单元。\\
+\item
+  真正基于FLASH工艺的FPGA使用FLASH作为配置存储的主要资源，并且不需要SRAM。\\
+\item
+  功耗低。\\
+\item
+  对辐射效应更宽容。
+\end{itemize}
+\end{block}
+
+\begin{block}{采用FLASH工艺的PLD}
+\phantomsection\label{ux91c7ux7528flashux5de5ux827aux7684pld}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{特性}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    具有多次可重复编程的能力。\\
+  \item
+    非易失性：断电后，器件配置信息仍保存在PLD内。
+  \end{itemize}
+\item
+  \textbf{结构}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    FLASH可采用多种结构，与EPROM单元类似，具有一个浮置栅晶体管单元和EEPROM器件的薄氧化层特性。
+  \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{Flash编程技术总结}
+\phantomsection\label{flashux7f16ux7a0bux6280ux672fux603bux7ed3}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{存储机制}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    浮栅晶体管电荷存储
+  \end{itemize}
+\item
+  \textbf{技术特征}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    ✓ 非易失性存储\\
+  \item
+    ✓ 单元密度较SRAM提升40\%\\
+  \item
+    ✓ 耐受10\textsuperscript{4-10}5次编程周期
+  \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{可编程逻辑器件工艺总结}
+\phantomsection\label{ux53efux7f16ux7a0bux903bux8f91ux5668ux4ef6ux5de5ux827aux603bux7ed3}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{熔丝 (Fuse)}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \textbf{可重复编程}: 否
+  \item
+    \textbf{易失性}: 否
+  \item
+    \textbf{技术}: 双极型
+  \end{itemize}
+\item
+  \textbf{EPROM}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \textbf{可重复编程}: 是（需移出电路）
+  \item
+    \textbf{易失性}: 否
+  \item
+    \textbf{技术}: UVCMOS
+  \end{itemize}
+\item
+  \textbf{EEPROM}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \textbf{可重复编程}: 是（可在电路内）
+  \item
+    \textbf{易失性}: 否
+  \item
+    \textbf{技术}: EECMOS
+  \end{itemize}
+\item
+  \textbf{SRAM}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \textbf{可重复编程}: 是（可在电路内）
+  \item
+    \textbf{易失性}: 是
+  \item
+    \textbf{技术}: CMOS
+  \end{itemize}
+\item
+  \textbf{反熔丝 (Antifuse)}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \textbf{可重复编程}: 否
+  \item
+    \textbf{易失性}: 否
+  \item
+    \textbf{技术}: CMOS+
+  \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}{CPLD原理及结构}
+\phantomsection\label{cpldux539fux7406ux53caux7ed3ux6784}
+\begin{block}{复杂可编程逻辑器件（CPLD）概述}
+\phantomsection\label{ux590dux6742ux53efux7f16ux7a0bux903bux8f91ux5668ux4ef6cpldux6982ux8ff0}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{结构}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    CPLD 由多个类似 SPLD 的块集成在单个芯片上组成。
+  \item
+    与 SPLD 相比，CPLD 更加复杂，甚至在其基本类似 SPLD
+    的块级别也是如此。
+  \end{itemize}
+\item
+  \textbf{讨论重点}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \textbf{商用产品概述}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      首先对市场上的商用 CPLD 产品进行详细讨论。
+    \end{itemize}
+  \item
+    \textbf{适用应用}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      探讨 CPLD 最适合的应用类型。
+    \end{itemize}
+  \item
+    \textbf{产品比较}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      提供足够的细节，便于比较各种竞争产品。
+    \item
+      特别关注使用更广泛的器件。
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{Altera CPLDs}}
+\phantomsection\label{altera-cplds}
+\begin{itemize}
+\item
+  \textbf{产品系列}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Altera 开发了三类属于 CPLD 的芯片系列：MAX 5000、MAX 7000 和 MAX
+    9000。
+  \item
+    \textbf{MAX 7000 系列}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      广泛使用，提供先进的逻辑容量和速度性能。
+    \item
+      是讨论的重点。
+    \end{itemize}
+  \item
+    \textbf{MAX 5000 系列}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      代表了一种较旧的技术，提供成本效益高的解决方案。
+    \end{itemize}
+  \item
+    \textbf{MAX 9000 系列}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      与 MAX 7000 类似，但提供更高的逻辑容量（业界最高）。
+    \end{itemize}
+  \end{itemize}
+\item
+  \textbf{MAX 7000 系列架构}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    如图8所示，由以下部分组成：
+
+    \begin{itemize}
+    \tightlist
+    \item
+      \textbf{Logic Array Blocks (LABs)}: 逻辑阵列块。
+    \item
+      \textbf{Programmable Interconnect Array (PIA)}:
+      可编程互连阵列，能够连接任何 LAB 的输入或输出。
+    \end{itemize}
+  \item
+    芯片的输入和输出直接连接到 PIA 和 LABs。
+  \item
+    LAB 可以被视为一种复杂的 SPLD 结构，因此整个芯片可以看作是一个 SPLD
+    阵列。
+  \item
+    \textbf{编程技术}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      MAX 7000 器件基于 EPROM 和 EEPROM 技术。
+    \item
+      1996 年，Altera 发布了 7000S 系列，支持``电路内''可重复编程。
+    \end{itemize}
+  \end{itemize}
+\item
+  \textbf{LAB 结构}:
+
+  \begin{figure}
+  \centering
+  \pandocbounded{\includegraphics[keepaspectratio]{img1/MAX7000.jpeg}}
+  \caption{Altera MAX 7000}
+  \end{figure}
+
+  \textbf{图5：} \emph{Altera MAX7000的逻辑阵列模块（Logic Array
+  Block，LAB).}
+
+  \begin{figure}
+  \centering
+  \pandocbounded{\includegraphics[keepaspectratio]{img1/MAX7000Macrocell.jpeg}}
+  \caption{MAX 7000 Macrocell}
+  \end{figure}
+
+  \textbf{图6：} \emph{MAX7000宏单元.}
+
+  \begin{itemize}
+  \tightlist
+  \item
+    如图5所示，每个 LAB 由两组八个\textbf{宏单元}组成（如图10所示）。
+  \item
+    \textbf{宏单元}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      包含一组可编程乘积项（与门平面的一部分），驱动或门和触发器。
+    \item
+      触发器可配置为 D 型、JK、T、SR 或透明。
+    \end{itemize}
+  \item
+    \textbf{或门输入}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      或门的输入数量可变，可以来自宏单元内的最多五个乘积项，还可以从同一
+      LAB 内的其他宏单元引入最多15个额外的乘积项。
+    \item
+      这种灵活性使得 MAX 7000 系列在芯片面积利用上更加高效。
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+\end{block}
+
+\begin{block}{\textbf{AMD Mach 系列 CPLD}}
+\phantomsection\label{amd-mach-ux7cfbux5217-cpld}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{产品系列}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    AMD 提供五个子系列的 CPLD，称为 Mach 1 到 Mach 5。
+  \item
+    每个 Mach 器件由多个类似 PAL 的块组成：
+
+    \begin{itemize}
+    \tightlist
+    \item
+      \textbf{Mach 1 和 Mach 2}: 由优化的 22V16 PAL 构成。
+    \item
+      \textbf{Mach 3 和 Mach 4}: 由多个优化的 34V16 PAL 构成。
+    \item
+      \textbf{Mach 5}: 结构类似，但提供增强的速度性能。
+    \end{itemize}
+  \item
+    \textbf{编程技术}: 所有 Mach 芯片都基于 EEPROM 技术。
+  \item
+    \textbf{产品范围}:
+    五个子系列提供了广泛的选择，从小型、低成本的芯片到大型、先进的芯片。
+  \item
+    \textbf{讨论重点}: Mach 4 系列，因为它代表了 Mach
+    家族中最先进的产品。
+  \end{itemize}
+\item
+  \textbf{Mach 4 架构}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    如图7所示，Mach 4 芯片由多个 34V16 类似 PAL
+    的块组成，并通过中央交换矩阵（Central Switch Matrix）互连。
+  \item
+    \textbf{芯片规模}: 从 6 到 16 个 PAL 块不等，对应的等效门数约为 2000
+    到 5000。
+  \item
+    \textbf{编程方式}: 支持电路内编程。
+  \item
+    \textbf{互连方式}: 所有 PAL
+    块之间的连接（包括块内部连接）都通过中央交换矩阵进行。
+  \item
+    \textbf{延迟特性}: 由于所有连接都通过相同的路径，Mach 4
+    实现的电路时序延迟是可预测的。
+  \end{itemize}
+\end{itemize}
+
+\pandocbounded{\includegraphics[keepaspectratio]{img1/MAch4.jpeg}}
+\textbf{图7} \emph{AMD Mach 4 CPLD结构.}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Mach 4 PAL 块结构}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    每个类似 PAL 的块具有 16 个输出和 34 个输入（其中 16
+    个为反馈输出），相当于一个 34V16 PAL。
+  \item
+    \textbf{关键改进}:
+
+    \begin{enumerate}
+    \tightlist
+    \item
+      \textbf{乘积项分配器（Product Term Allocator）}:
+      位于与门平面和宏单元之间，负责将与门平面的乘积项分配给需要的或门。
+    \item
+      \textbf{输出交换矩阵（Output Switch Matrix）}: 位于或门和 I/O
+      引脚之间，允许任何宏单元输出驱动连接到 PAL 块的任何 I/O 引脚。
+    \end{enumerate}
+  \item
+    \textbf{灵活性}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      乘积项分配器使得与门平面的乘积项可以在或门之间灵活共享。
+    \item
+      输出交换矩阵增强了引脚分配的灵活性。
+    \end{itemize}
+  \item
+    \textbf{优点}: 系统内编程和高灵活性使得硬件设计变更更加容易。
+  \end{itemize}
+\end{itemize}
+\end{block}
+
+\begin{block}{\textbf{Lattice CPLDs}}
+\phantomsection\label{lattice-cplds}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{产品系列}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Lattice 提供完整的 CPLD 产品线，主要包括两类产品：
+
+    \begin{itemize}
+    \tightlist
+    \item
+      \textbf{pLSI}: 三个系列的 EEPROM 型 CPLD。
+    \item
+      \textbf{ispLSI}: 与 pLSI 相同，但支持系统内编程（in-system
+      programmable）。
+    \end{itemize}
+  \item
+    \textbf{产品家族}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      每个系列（pLSI 和 ispLSI）都提供三种不同逻辑容量和速度性能的产品。
+    \end{itemize}
+  \end{itemize}
+\item
+  \textbf{1000 系列}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \textbf{逻辑容量}: 约 1200 到 4000 门。
+  \item
+    \textbf{引脚到引脚延迟}: 10 纳秒。
+  \item
+    \textbf{结构}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      由多个类似 SPLD 的块组成，通过全局路由池（Global Routing Pool,
+      GRP）连接。
+    \end{itemize}
+  \end{itemize}
+\item
+  \textbf{2000 系列}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \textbf{逻辑容量}: 600 到 2000 门。
+  \item
+    \textbf{特点}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      宏单元与 I/O 引脚的比率更高。
+    \item
+      速度性能优于 1000 系列。
+    \end{itemize}
+  \item
+    \textbf{引脚到引脚延迟}: 5.5 纳秒，提供业界领先的速度。
+  \end{itemize}
+\item
+  \textbf{3000 系列}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \textbf{逻辑容量}: 高达 5000 门。
+  \item
+    \textbf{引脚到引脚延迟}: 约 10-15 纳秒。
+  \item
+    \textbf{功能}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      与 AMD Mach 4 相似。
+    \item
+      提供额外的增强功能，支持 JTAG 边界扫描等现代设计风格。
+    \end{itemize}
+  \end{itemize}
+\item
+  \textbf{Lattice pLSI/ispLSI 结构}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    如图8所示，芯片外边缘是双向
+    I/O，直接连接到\textbf{通用逻辑块（Generic Logic Blocks,
+    GLBs）}和\textbf{全局路由池（GRP）}。
+  \item
+    \textbf{GLBs}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      类似 PAL 的小块，包含与门平面、乘积项分配器和宏单元。
+    \end{itemize}
+  \item
+    \textbf{GRP}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      一组跨越整个芯片的导线，用于连接 GLB 的输入和输出。
+    \item
+      所有互连都通过 GRP 进行，因此Lattice芯片的时序完全可预测，类似于
+      AMD Mach 器件。
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+
+\pandocbounded{\includegraphics[keepaspectratio]{img1/lattice.jpeg}}
+\textbf{图8：} \emph{Lattice (i)PLSI架构图.}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{Cypress CPLDs}}
+\phantomsection\label{cypress-cplds}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{技术基础}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Cypress 最近开发了一类 CPLD 产品，称为 FLASH370，基于 FLASH EEPROM
+    技术。
+  \item
+    在多个方面与 AMD 和 Lattice 的器件类似。
+  \end{itemize}
+\item
+  \textbf{性能}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \textbf{引脚到引脚延迟}: 8.5 到 15 纳秒。
+  \item
+    \textbf{编程方式}: 不支持系统内编程。
+  \end{itemize}
+\item
+  \textbf{I/O 特点}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    较大的芯片需要更多的 I/O，因此 FLASH370 提供了比竞争产品更多的 I/O。
+  \item
+    宏单元数量与双向 I/O 引脚数量呈线性关系：
+
+    \begin{itemize}
+    \tightlist
+    \item
+      最小器件：32 宏单元和 32 I/O。
+    \item
+      最大器件：256 宏单元和 256 I/O。
+    \end{itemize}
+  \end{itemize}
+\item
+  \textbf{架构}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    如图9所示，FLASH370 具有典型的 CPLD 架构：
+
+    \begin{itemize}
+    \tightlist
+    \item
+      多个类似 PAL 的块。
+    \item
+      可编程互连矩阵（Programmable Interconnect Matrix,
+      PIM）用于连接这些块。
+    \end{itemize}
+  \item
+    \textbf{PAL 块内部结构}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      \textbf{与门平面（AND-plane）}: 驱动乘积项分配器。
+    \item
+      \textbf{乘积项分配器}: 将 0 到 16
+      个乘积项分配给每个或门（共32个）。
+    \item
+      \textbf{反馈路径}: 从宏单元输出到 PIM 有 32
+      条导线，允许宏单元被``埋入''（不驱动 I/O 引脚），同时仍可将 I/O
+      引脚用作输入。
+    \end{itemize}
+  \end{itemize}
+\item
+  \textbf{灵活性}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    CPLD 中类似 PAL 的块提供了额外灵活性，这是普通 PAL 所不具备的。
+  \end{itemize}
+\end{itemize}
+
+\pandocbounded{\includegraphics[keepaspectratio]{img1/cypress.jpeg}}
+\textbf{图9} \emph{Cypress FLASH370 CPLD架构图.}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{Xilinx XC7000 CPLDs}}
+\phantomsection\label{xilinx-xc7000-cplds}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{概述}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Xilinx 主要生产 FPGA，但也提供一系列 CPLD，称为 XC7000，并宣布了新的
+    CPLD 系列 XC9500。
+  \item
+    XC7000 系列包括两个主要家族：7200 系列和 7300 系列。
+  \end{itemize}
+\item
+  \textbf{7200 系列}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \textbf{来源}: 最初由 Plus Logic 作为 Hiper EPLDs 推向市场。
+  \item
+    \textbf{逻辑容量}: 约 600 到 1500 门。
+  \item
+    \textbf{速度性能}: 引脚到引脚延迟约为 25 纳秒。
+  \item
+    \textbf{结构}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      由多个类似 SPLD 的块组成，每个块包含 9 个宏单元。
+    \end{itemize}
+  \item
+    \textbf{宏单元特点}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      每个宏单元包含两个或门。
+    \item
+      每个或门的输入连接到一个两位算术逻辑单元（ALU）。
+    \item
+      ALU
+      可以生成其两个输入的任何函数，并将其输出馈送到可配置的触发器中。
+    \end{itemize}
+  \end{itemize}
+\item
+  \textbf{7300 系列}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \textbf{特点}: 是 7200 系列的增强版本。
+  \item
+    \textbf{逻辑容量}: 高达 3000 门（当整个系列可用时）。
+  \item
+    \textbf{速度性能}: 更高的速度性能。
+  \end{itemize}
+\item
+  \textbf{XC9500 系列}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \textbf{特点}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      支持系统内编程。
+    \item
+      引脚到引脚延迟为 5 纳秒。
+    \item
+      逻辑容量高达 6200 门。
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{CPLD 的应用}}
+\phantomsection\label{cpld-ux7684ux5e94ux7528}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{概述}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    CPLD
+    因其高速度和广泛的容量范围，适用于多种应用，从实现随机粘合逻辑到小型门阵列的原型设计。
+  \item
+    目前工业中最常见的用途之一是将多个 SPLD 的设计转换为更少数量的
+    CPLD，这是 CPLD 市场快速增长的重要原因。
+  \end{itemize}
+\item
+  \textbf{具体应用}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \textbf{复杂设计实现}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      如图形控制器、LAN 控制器、UARTs、缓存控制等。
+    \end{itemize}
+  \item
+    \textbf{适合的电路类型}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      能够利用宽与门/或门且不需要大量触发器的电路非常适合在 CPLD
+      中实现。
+    \end{itemize}
+  \end{itemize}
+\item
+  \textbf{设计优势}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \textbf{可重复编程}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      所有商用 CPLD 产品都支持重新编程，简化了设计变更。
+    \end{itemize}
+  \item
+    \textbf{系统内编程}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      支持在不停机的情况下重新配置硬件（例如更改通信电路的协议）。
+    \end{itemize}
+  \end{itemize}
+\item
+  \textbf{设计分区与性能预测}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    设计通常自然地划分为 CPLD 中类似 SPLD 的块。
+  \item
+    这种分区的结果是比将设计分割成许多小部分并将其映射到芯片不同区域更可预测的速度性能。
+  \item
+    \textbf{电路实现的预测性}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      这是 CPLD 架构最显著的优势之一。
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}{\textbf{FPGA}}
+\phantomsection\label{fpga}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{市场背景}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    FPGA
+    市场是半导体行业中增长最快的领域之一，但其市场格局变化迅速，公司在其中的参与度也在快速变化。
+  \item
+    由于很难预测行业稳定时哪些产品将成为主流，因此本节将聚焦于当前广泛使用的产品，而非列举所有
+    FPGA 制造商。
+  \end{itemize}
+\item
+  \textbf{容量描述}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    在描述每个器件时，将列出其容量，通常以供应商提供的等效 2
+    输入与非门（NAND 门）数量表示。
+  \item
+    注意：FPGA 行业中的门数计算存在争议，因此本文提供的数字仅供参考。
+  \end{itemize}
+\item
+  \textbf{FPGA 分类}:
+
+  \begin{enumerate}
+  \tightlist
+  \item
+    \textbf{基于 SRAM 的 FPGA}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      主要厂商：Xilinx 和 Altera，AT\&T 是主要竞争对手。
+    \end{itemize}
+  \item
+    \textbf{基于反熔丝的 FPGA}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      主要厂商：Actel、Quicklogic、Cypress 和 Xilinx。
+    \end{itemize}
+  \end{enumerate}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{Xilinx 基于 SRAM 的 FPGA}}
+\phantomsection\label{xilinx-ux57faux4e8e-sram-ux7684-fpga}
+\begin{block}{\textbf{基本结构}:}
+\phantomsection\label{ux57faux672cux7ed3ux6784}
+\begin{itemize}
+\item
+  Xilinx FPGA
+  的基本结构是\textbf{基于阵列的}，即每个芯片由一个二维逻辑块阵列组成，逻辑块通过水平和垂直的布线通道互连。
+\item
+  图2展示了这种架构的示意图。
+\item
+  \textbf{产品系列}:
+\item
+  \textbf{XC2000 系列}: 首个 FPGA 系列，于1985年推出。
+\item
+  \textbf{XC3000 系列}: 仍广泛使用。
+\item
+  \textbf{XC4000 系列}: 更现代且更受欢迎的系列。
+\item
+  \textbf{XC5000 系列}: 与 XC4000
+  类似，但以更具吸引力的价格提供相似功能，速度略有损失。
+\item
+  \textbf{XC8100 系列}: 基于反熔丝技术的新系列，暂未广泛使用。
+\item
+  \textbf{容量范围}: XC4000 系列的容量从约 2000 到超过 15000 等效门。
+\end{itemize}
+\end{block}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{XC4000 逻辑块（CLB）}:}
+\phantomsection\label{xc4000-ux903bux8f91ux5757clb}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{查找表（LUTs）}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    LUT 是一个小型的单比特宽存储阵列，存储器地址线是逻辑块的输入，输出是
+    LUT 的输出。
+  \item
+    一个具有 K 个输入的 LUT 对应一个 2\^{}K x 1
+    比特的存储器，通过将逻辑函数的真值表编程到存储器中，可以实现任意 K
+    输入逻辑函数。
+  \end{itemize}
+\item
+  \textbf{CLB 结构}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    如图18所示，每个 CLB 包含三个独立的 LUT：
+
+    \begin{itemize}
+    \tightlist
+    \item
+      两个 4 输入 LUT，由 CLB 输入驱动。
+    \item
+      第三个 LUT 可以与前两个结合使用。
+    \end{itemize}
+  \item
+    这种配置允许 CLB 实现多达 9 输入的广泛逻辑函数，或实现两个独立的 4
+    输入函数。
+  \item
+    每个 CLB 还包含两个触发器。
+  \end{itemize}
+\end{itemize}
+
+\pandocbounded{\includegraphics[keepaspectratio]{img1/XC4000.jpeg}}
+\textbf{图10 -} \emph{Xilinx XC4000 可配置逻辑块（CLB）。}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{系统级特性}:}
+\phantomsection\label{ux7cfbux7edfux7ea7ux7279ux6027}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{算术电路}: 每个 CLB
+  包含高效执行算术运算的电路（如快速进位操作）。
+\item
+  \textbf{RAM 配置}: CLB 中的 LUT 可以配置为读/写 RAM 单元。
+\item
+  \textbf{XC4000E 版本}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    RAM 可以配置为双端口 RAM，具有一个写端口和两个读端口。
+  \item
+    RAM 块可以配置为同步 RAM。
+  \end{itemize}
+\item
+  \textbf{宽与门平面}:
+  芯片外围包含非常宽的与门平面，便于实现宽解码器等电路块。
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{互连结构}:}
+\phantomsection\label{ux4e92ux8fdeux7ed3ux6784}
+\begin{itemize}
+\tightlist
+\item
+  互连结构是 FPGA 的另一个关键特征。
+\item
+  \textbf{布线通道}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    分为水平和垂直通道。
+  \item
+    通道中包含：
+
+    \begin{itemize}
+    \tightlist
+    \item
+      短线段：跨越单个 CLB。
+    \item
+      长线段：跨越两个 CLB。
+    \item
+      超长线段：跨越整个芯片的长度或宽度。
+    \end{itemize}
+  \item
+    可编程开关用于连接 CLB 的输入输出和线段，或连接不同的线段。
+  \end{itemize}
+\item
+  \textbf{重要特点}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    信号必须通过开关从一个 CLB 传递到另一个
+    CLB，所经过的开关数量取决于所使用的线段。
+  \item
+    因此，实现电路的速度性能部分取决于 CAD 工具如何分配线段给各个信号。
+  \end{itemize}
+\end{itemize}
+
+\pandocbounded{\includegraphics[keepaspectratio]{img1/XC4000Wire.jpeg}}
+\textbf{图11 -} \emph{Xilinx XC4000 线段示意图。}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{Xilinx Artix-7 XC7A35T FPGA 的布局}}
+\phantomsection\label{xilinx-artix-7-xc7a35t-fpga-ux7684ux5e03ux5c40}
+\begin{block}{\textbf{FPGA 组成}}
+\phantomsection\label{fpga-ux7ec4ux6210}
+\begin{itemize}
+\tightlist
+\item
+  Xilinx Artix-7 XC7A35T FPGA 主要由以下九个组件构成：
+
+  \begin{enumerate}
+  \tightlist
+  \item
+    输入/输出块（I/O Blocks）
+  \item
+    可配置逻辑块（CLBs）
+  \item
+    互连资源
+  \item
+    块 RAM
+  \item
+    DSP 切片
+  \item
+    时钟管理块
+  \item
+    XADC 块
+  \item
+    高速串行 I/O 收发器
+  \item
+    PCIe 接口
+  \end{enumerate}
+\item
+  这些模块的布局如图2.9所示。
+\item
+  大多数模块也可以通过 Vivado 设计套件观察到（将在第4章介绍）。
+\item
+  读者将有机会在设计数字系统时观察使用了哪些模块。
+\item
+  这些模块（或其变体）在 FPGA 中几乎是标准的，但不同 FPGA
+  家族可能会缺少某些模块或包含额外的模块。
+\end{itemize}
+
+\pandocbounded{\includegraphics[keepaspectratio]{img1/XC7A35T.jpeg}}\\
+\textbf{图12 - Artix-7 XC7A35T FPGA 的基本组成模块。}
+\end{block}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{输入/输出块}}
+\phantomsection\label{ux8f93ux5165ux8f93ux51faux5757}
+\begin{block}{\textbf{简介}}
+\phantomsection\label{ux7b80ux4ecb}
+\begin{itemize}
+\tightlist
+\item
+  数字设备通过其输入和输出引脚与外界交互，FPGA 也不例外。
+\item
+  数据通过输入引脚从外部获取，输出引脚用于将数据输出到外部。
+\item
+  这些输入和输出引脚位于 FPGA 的输入/输出块中。
+\end{itemize}
+\end{block}
+
+\begin{block}{\textbf{电压与引脚数量}}
+\phantomsection\label{ux7535ux538bux4e0eux5f15ux811aux6570ux91cf}
+\begin{itemize}
+\tightlist
+\item
+  Artix-7 XC7A35T FPGA 的输入/输出引脚支持标准电压范围：1.2 到 3.3 V。
+\item
+  Basys3 开发板上的 FPGA 有 106 个输入/输出引脚。
+\item
+  Arty 开发板上的 FPGA 有 210 个输入/输出引脚。
+\item
+  这些引脚可以用作输入、输出或两者兼用。
+\end{itemize}
+\end{block}
+
+\begin{block}{\textbf{引脚模式}}
+\phantomsection\label{ux5f15ux811aux6a21ux5f0f}
+\begin{enumerate}
+\tightlist
+\item
+  \textbf{输入模式}: 通过引脚从外部获取数据。
+\item
+  \textbf{输出模式}: 通过引脚向外部输出电压电平。
+\item
+  \textbf{双向模式}: 同一引脚可用于输入和输出。
+\end{enumerate}
+\end{block}
+
+\begin{block}{\textbf{引脚分组与模式}}
+\phantomsection\label{ux5f15ux811aux5206ux7ec4ux4e0eux6a21ux5f0f}
+\begin{itemize}
+\tightlist
+\item
+  输入/输出引脚被分组为\textbf{组（Banks）}。
+\item
+  每组中的两个引脚被分组为正（P）负（N）对。
+\item
+  \textbf{单端模式}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    输入电压接近地电平时，逻辑电平为 0。
+  \item
+    输入电压接近 \emph{VCC} 时，逻辑电平为 1。
+  \end{itemize}
+\item
+  \textbf{差分模式}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    引脚 P 的电压低于引脚 N 时，逻辑电平为 0。
+  \item
+    引脚 P 的电压高于引脚 N 时，逻辑电平为 1。
+  \end{itemize}
+\item
+  \textbf{参考模式}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    输入电压低于参考电压时，逻辑电平为 0。
+  \item
+    输入电压高于参考电压时，逻辑电平为 1。
+  \end{itemize}
+\end{itemize}
+\end{block}
+
+\begin{block}{\textbf{输出模式}}
+\phantomsection\label{ux8f93ux51faux6a21ux5f0f}
+\begin{itemize}
+\tightlist
+\item
+  单端引脚也可用作输出。
+
+  \begin{itemize}
+  \tightlist
+  \item
+    逻辑电平为 1 时，引脚电压为 \emph{VCC}。
+  \item
+    逻辑电平为 0 时，引脚电压为地电平。
+  \end{itemize}
+\end{itemize}
+\end{block}
+\end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+\begin{block}{\textbf{可配置逻辑块（CLB）}}
+\phantomsection\label{ux53efux914dux7f6eux903bux8f91ux5757clb}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{简介}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    可配置逻辑块（CLB）是 FPGA 中实现数字系统的基本元素。
+  \item
+    CLB 的核心包括查找表（LUT）、触发器和多路复用器。
+  \end{itemize}
+\end{itemize}
+
+\begin{block}{\textbf{多路复用器}}
+\phantomsection\label{ux591aux8defux590dux7528ux5668}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{基本概念}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    多路复用器是一种选择器，具有 \emph{N} 个选择位、2 \emph{N}
+    个输入引脚和1个输出引脚。
+  \item
+    通过选择位决定哪个输入引脚连接到输出。
+  \end{itemize}
+\item
+  \textbf{二选一多路复用器}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    图2.10展示了由基本逻辑门构成的二选一多路复用器的电路图。
+  \item
+    工作原理：
+    \[out = \begin{cases} \text{in1} & \text{if sel = 0} \\ \text{in2} & \text{if sel = 1} \end{cases} \tag{2.4}\]
+  \item
+    选择引脚（sel）决定哪个输入连接到输出。
+  \end{itemize}
+\item
+  \textbf{32选1多路复用器}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    有5个选择位，可以选择32个输入中的其中一个。
+  \end{itemize}
+\end{itemize}
+
+\pandocbounded{\includegraphics[keepaspectratio]{img1/XC7A35TMUX.jpeg}}\\
+\textbf{图13 - 由基本逻辑门构成的二选一多路复用器电路图。}
+\end{block}
+
+\begin{block}{\textbf{触发器}}
+\phantomsection\label{ux89e6ux53d1ux5668}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{基本概念}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    触发器是 FPGA 中的基本存储单元，能够存储1位数据。
+  \item
+    触发器可以通过数字逻辑门构建，但其布局较为复杂。
+  \item
+    触发器以抽象形式表示为图2.11，其中 \passthrough{\lstinline!in!}
+    引脚用于设置存储的位值，\passthrough{\lstinline!out!}
+    引脚用于获取存储的值。
+  \item
+    触发器只能存储逻辑电平0或1。
+  \end{itemize}
+\end{itemize}
+
+\pandocbounded{\includegraphics[keepaspectratio]{img1/XC7A35TFF.jpeg}}\\
+\textbf{图14 - 触发器的抽象表示。}
+\end{block}
+
+\begin{block}{\textbf{查找表（LUT）}}
+\phantomsection\label{ux67e5ux627eux8868lut}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{基本概念}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    LUT 是一组触发器，连接到多路复用器的输入引脚。
+  \item
+    多路复用器的选择位用于选择要访问的触发器地址。
+  \item
+    LUT 可以实现任何以选择位为输入变量的组合逻辑函数。
+  \item
+    当触发器的内容改变时，实现的逻辑函数也会改变，从而实现 FPGA
+    的可重构性。
+  \end{itemize}
+\item
+  \textbf{N 输入 LUT}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    具有 2 \emph{N} 个表项，\emph{N} 个选择位。
+  \item
+    图2.12展示了一个由触发器和多路复用器构成的抽象 LUT。
+  \item
+    Artix-7 FPGA 中，两个5输入的 LUT
+    可以组合实现6输入、7输入或8输入的组合逻辑函数。
+  \end{itemize}
+\end{itemize}
+
+\pandocbounded{\includegraphics[keepaspectratio]{img1/XC7A35LUT.jpeg}}\\
+\textbf{图14 - N 输入 LUT 的抽象表示。}
+\end{block}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{互连资源}}
+\phantomsection\label{ux4e92ux8fdeux8d44ux6e90}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{简介}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    互连资源由电线和可编程开关组成，负责连接 FPGA 中的 CLB
+    和其他构建模块。
+  \item
+    互连也称为布线通道。
+  \item
+    Artix-7 FPGA 中的 CLB 以网格结构布置，简化了互连使用的规划。
+  \item
+    初级或中级用户无需了解互连功能，Vivado
+    设计套件负责高效使用这些资源。
+  \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{块 RAM}}
+\phantomsection\label{ux5757-ram}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{简介}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    与由 SLICEM 块组成的分布式存储元件不同，Artix-7 FPGA 还具有块 RAM
+    模块。
+  \item
+    块 RAM 可用于存储数据，还可以构成缓冲区、大型 LUT 或移位寄存器。
+  \end{itemize}
+\item
+  \textbf{容量}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    每个块 RAM 可以存储 36-kbit 的数据块或两个 18-kbit 的数据块。
+  \item
+    FPGA 中共有 50 个块 RAM，总容量为 1800 kbits。
+  \item
+    每个 36-kbit 块 RAM 的数据宽度为 64 位，额外 8
+    位用于数据读取过程中的单比特错误纠正或双比特错误检测。
+  \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{DSP 切片}}
+\phantomsection\label{dsp-ux5207ux7247}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{简介}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    现代 FPGA
+    中有专门用于算术和逻辑运算的模块，称为数字信号处理（DSP）切片。
+  \item
+    Artix-7 FPGA 中的 DSP 切片称为 DSP48E1，共有 90 个。
+  \end{itemize}
+\item
+  \textbf{功能}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    每个 DSP 切片可以执行多种算术和逻辑运算，包括：
+
+    \begin{itemize}
+    \tightlist
+    \item
+      25 位和 18 位二进制数的乘法。
+    \item
+      48 位数的加法、减法和累加。
+    \item
+      48 位数的逻辑运算。
+    \end{itemize}
+  \item
+    这些运算在没有 DSP 切片的情况下需要复杂的算法实现，因此 DSP
+    切片在实现中非常高效。
+  \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{时钟管理}}
+\phantomsection\label{ux65f6ux949fux7ba1ux7406}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{简介}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    时钟是一个周期性方波信号，用于同步数字系统的运行。
+  \item
+    大多数数字系统需要时钟信号来同步逻辑操作。
+  \end{itemize}
+\item
+  \textbf{时钟管理}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Artix-7 FPGA 没有内部时钟生成电路，用户需要向 FPGA 提供时钟信号。
+  \item
+    一些输入/输出引脚能够接收时钟信号。
+  \item
+    时钟信号进入 FPGA 后，可以由时钟管理模块（CMT）处理并分配到整个
+    FPGA。
+  \item
+    Basys3 和 Arty 开发板提供外部时钟源。
+  \item
+    Artix-7 FPGA 分为六个时钟区域，每个区域包含大部分或所有 FPGA
+    构建模块。
+  \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{Altera FLEX 8000}}
+\phantomsection\label{altera-flex-8000}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{概述}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Altera 的 FLEX 8000 系列具有类似于 CPLD
+    的三层层次结构，但其最低层由查找表（LUT）组成，而不是类似 SPLD
+    的块，因此被归类为 FPGA。
+  \item
+    FLEX 8000 结合了 FPGA 和 CPLD 技术，基于 SRAM，使用 4 输入 LUT
+    作为其基本逻辑块。
+  \item
+    \textbf{逻辑容量}: 从约 4000 门到超过 15000 门。
+  \end{itemize}
+\end{itemize}
+
+\pandocbounded{\includegraphics[keepaspectratio]{img1/FLEX800.jpeg}}
+\textbf{图12:} \emph{Altera FLEX 8000 FPGA 架构。}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{XADC 模块}}
+\phantomsection\label{xadc-ux6a21ux5757}
+\begin{itemize}
+\tightlist
+\item
+  模拟信号可以通过采样和量化后被数字系统处理，执行这些操作的模块称为模数转换器（ADC）。由于数字系统的最新进展需要处理模拟信号，Artix-7
+  FPGA 专门配备了 XADC 模块。
+\item
+  Artix-7 XC7A35T FPGA 包含一个 XADC 模块，该模块由两个 ADC
+  模块组成。每个模块每秒可以采集 100 万个样本（MSPS），每个样本用 12
+  位表示。两个 ADC 模块可以同时处理两个不同的模拟信号。
+\end{itemize}
+\end{block}
+
+\begin{block}{\textbf{高速串行 I/O 收发器}}
+\phantomsection\label{ux9ad8ux901fux4e32ux884c-io-ux6536ux53d1ux5668}
+\begin{itemize}
+\item
+  高速串行 I/O
+  收发器（HSSIOs）是专门用于传输和接收串行数据的电路。这些收发器是进行速度约为每秒千兆比特（Gb/s）数据传输的必备组件。
+\item
+  PCIe（外围组件互连高速）是一种高速串行连接总线标准。Artix-7 XC7A35T
+  FPGA 包含一个用于 PCIe 接口的集成模块。
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{FLEX 8000 架构}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    如图13所示，FLEX 8000 的基本逻辑块称为\textbf{逻辑元素（Logic
+    Element, LE）}，包含一个 4 输入
+    LUT、一个触发器以及用于算术电路的特殊进位电路（类似于 Xilinx
+    XC4000）。
+  \item
+    LE 还包括级联电路，可高效实现宽与函数。
+  \item
+    \textbf{LE 细节}: 如图21所示。
+  \end{itemize}
+\end{itemize}
+
+\pandocbounded{\includegraphics[keepaspectratio]{img1/FLEX800LE.jpeg}}
+\textbf{图13:} \emph{Altera FLEX 8000 逻辑单元（LE）。}
+\end{frame}
+
+\begin{frame}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{逻辑阵列块（LAB）}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    LE 被分组为 8 个一组的\textbf{逻辑阵列块（Logic Array Blocks,
+    LABs）}，这个概念借用了 Altera 的 CPLD。
+  \item
+    如图14所示，每个 LAB 包含本地互连，每条本地线可以连接同一 LAB
+    内的任何 LE。
+  \item
+    本地互连还连接到 FLEX 8000 的\textbf{全局互连（FastTrack）}。
+  \item
+    \textbf{FastTrack}: 类似于 Xilinx 的长线，每条 FastTrack
+    线延伸整个芯片的宽度或高度。
+  \item
+    \textbf{特点}: FLEX 8000 只有长线，这使得 CAD
+    工具能够自动配置，且互连延迟比使用许多小段线的 FPGA 更可预测。
+  \end{itemize}
+\end{itemize}
+
+\pandocbounded{\includegraphics[keepaspectratio]{img1/FLEX800LAB.jpeg}}
+\textbf{图14:} \emph{Altera FLEX 8000 逻辑阵列块（LAB）。}
+\end{frame}
+
+\begin{frame}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{FLEX 10000 系列}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    FLEX 10000 是对 FLEX 8000 架构的扩展，增加了可变大小的 SRAM
+    块，称为\textbf{嵌入式阵列块（Embedded Array Blocks, EABs）}。
+  \item
+    \textbf{EAB 功能}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      可以配置为具有可变宽高比的 SRAM 块：256 x 8、512 x 4、1K x 2 或 2K
+      x 1。
+    \item
+      也可以配置为实现复杂逻辑电路（如乘法器），作为大型多输出查找表使用。
+    \end{itemize}
+  \item
+    \textbf{CAD 工具支持}: Altera 提供了多个宏函数，用于在 EAB
+    中实现有用的逻辑电路。
+  \item
+    \textbf{逻辑容量}: 目前 FPGA 中最高，但难以提供准确数字。
+  \end{itemize}
+\end{itemize}
+
+\pandocbounded{\includegraphics[keepaspectratio]{img1/FLEX10K.jpeg}}
+\textbf{图15：} \emph{Altera FLEX 10K FPGA 架构。}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{FPGA 的应用}}
+\phantomsection\label{fpga-ux7684ux5e94ux7528}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{概述}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    FPGA
+    在过去十年中迅速获得认可并快速增长，因为它们可以应用于非常广泛的应用领域。
+  \item
+    \textbf{典型应用}:
+
+    \begin{itemize}
+    \tightlist
+    \item
+      随机逻辑。
+    \item
+      集成多个 SPLD。
+    \item
+      设备控制器。
+    \item
+      通信编码和滤波。
+    \item
+      包含 SRAM 块的中小型系统。
+    \end{itemize}
+  \end{itemize}
+\item
+  \textbf{设计原型与硬件仿真}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \textbf{设计原型}: 用于在门阵列中实现的设计原型。
+
+    \begin{itemize}
+    \tightlist
+    \item
+      可能仅需要一个大型 FPGA（容量相当于一个小型门阵列）。
+    \end{itemize}
+  \item
+    \textbf{硬件仿真}: 仿真整个大型硬件系统。
+
+    \begin{itemize}
+    \tightlist
+    \item
+      涉及通过某种互连连接的多个 FPGA。
+    \item
+      例如，QuickTurn 等公司开发了包含多个 FPGA
+      和必要软件的产品，用于电路的分区和映射。
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{定制计算}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    一个新兴且前景广阔的应用领域是使用 FPGA 作为定制计算机。
+
+    \begin{itemize}
+    \tightlist
+    \item
+      利用可编程部分``执行''软件，而不是将软件编译为在常规 CPU 上执行。
+    \item
+      相关资源：IEEE 举办的 FPGA-Based Custom Computing Workshop
+      (FCCM)。
+    \end{itemize}
+  \end{itemize}
+\item
+  \textbf{设计与性能}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \textbf{CPLD 映射}: 设计通常自然地映射到类似 SPLD
+    的块，性能更可预测。
+  \item
+    \textbf{FPGA 映射}: 设计被分解为逻辑块大小的部分，并分布在 FPGA
+    的区域中。
+
+    \begin{itemize}
+    \tightlist
+    \item
+      由于 FPGA 的互连结构，这些逻辑块之间的连接可能引入各种延迟。
+    \item
+      因此，FPGA 的性能更多地取决于 CAD 工具如何将电路映射到芯片中。
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{基于 FPGA 的数字系统设计哲学}}
+\phantomsection\label{ux57faux4e8e-fpga-ux7684ux6570ux5b57ux7cfbux7edfux8bbeux8ba1ux54f2ux5b66}
+\begin{itemize}
+\tightlist
+\item
+  数字系统可以通过不同的设计策略和资源实现。本节讨论使用 FPGA
+  进行数字系统设计的哲学，强调如何有效地使用 FPGA。
+\end{itemize}
+\end{block}
+
+\begin{block}{\textbf{使用 FPGA 时的思考方式}}
+\phantomsection\label{ux4f7fux7528-fpga-ux65f6ux7684ux601dux8003ux65b9ux5f0f}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{设计自由}: 使用 FPGA
+  设计数字系统时，用户可以自由选择设计方法，同一个数字系统可以通过多种方式实现，设计师有责任选择最适合的设计风格。
+\item
+  \textbf{无预定义模块}: FPGA
+  设计开始时没有预定义的模块，设计师需要使用强大的资源来构建所需的模块，因此需要扎实的数字逻辑知识。FPGA
+  厂商也提供 IP 模块以简化设计。
+\item
+  \textbf{硬件描述语言（HDL）}: FPGA
+  设计使用硬件描述语言（HDL），而不是传统的顺序编程语言。设计应基于块级并行实现，以获得最佳性能。
+\item
+  \textbf{可重构性}: FPGA
+  可以在初始设计完成后重新配置，用户可以利用这一特性在设计和嵌入设备后改进和修改设计。
+\end{itemize}
+\end{block}
+
+\begin{block}{\textbf{FPGA 的优缺点}}
+\phantomsection\label{fpga-ux7684ux4f18ux7f3aux70b9}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{离散元件}:
+  离散元件设计需要物理空间和复杂的布线，一旦实现后设计就无法更改。FPGA
+  提供了更紧凑的解决方案，且设计可以重新配置。
+\item
+  \textbf{ASIC}: ASIC
+  克服了空间和布线问题，且在大规模生产时成本较低。然而，ASIC
+  设计一旦完成就无法更改，且制造时间较长。FPGA
+  在原型设计和验证方面具有优势。
+\item
+  \textbf{微控制器}: 微控制器和 FPGA
+  都具有可重构性和紧凑性，但微控制器的指令集限制了其灵活性，且功率消耗较高。FPGA
+  具有并行实现能力，操作速度更快，且可以在 FPGA 上实现微控制器。
+\end{itemize}
+\end{block}
+
+\begin{block}{\textbf{FPGA 的用途}}
+\phantomsection\label{fpga-ux7684ux7528ux9014}
+FPGA 可以用于几乎所有需要数字系统的领域。为了激励读者并说明学习基于 FPGA
+的数字设计的重要性，以下列出 FPGA
+的潜在应用领域：航空航天、汽车、广播、消费电子、国防、高性能计算、工业应用、医疗应用以及有线和无线通信。这些并非
+FPGA 的唯一应用领域，新的应用可能会随着时间的推移而出现。
+\end{block}
+\end{frame}
+
+\begin{frame}{FPGA与CPLD的主要区别有}
+\phantomsection\label{fpgaux4e0ecpldux7684ux4e3bux8981ux533aux522bux6709}
+\begin{enumerate}
+\tightlist
+\item
+  \textbf{架构差异}
+
+  \begin{itemize}
+  \tightlist
+  \item
+    FPGA 采用细粒度结构（LUT + 分布式寄存器），适合复杂时序逻辑。\\
+  \item
+    CPLD 采用粗粒度结构（乘积项 + 集中式宏单元），适合组合逻辑。
+  \end{itemize}
+\item
+  \textbf{资源规模}
+
+  \begin{itemize}
+  \tightlist
+  \item
+    FPGA 逻辑单元数量多，集成RAM、DSP等模块。\\
+  \item
+    CPLD 逻辑资源较少，无专用硬件模块。
+  \end{itemize}
+\item
+  \textbf{时序特性}
+
+  \begin{itemize}
+  \tightlist
+  \item
+    FPGA 时序优化依赖工具，延迟不可预测。\\
+  \item
+    CPLD 时序固定，适合确定性控制。
+  \end{itemize}
+\item
+  \textbf{适用场景}
+
+  \begin{itemize}
+  \tightlist
+  \item
+    FPGA：视频处理、通信协议、AI加速等。\\
+  \item
+    CPLD：电源管理、接口转换、简单状态机。
+  \end{itemize}
+\end{enumerate}
+\end{frame}
+
+\begin{frame}
+\begin{block}{选型建议}
+\phantomsection\label{ux9009ux578bux5efaux8bae}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{选择
+  FPGA}：需要高性能、高灵活性、支持复杂算法或大规模并行处理。\\
+\item
+  \textbf{选择 CPLD}：要求低功耗、快速启动、确定性延迟和小型逻辑控制。
+\end{itemize}
+\end{block}
+
+\begin{block}{\textbf{习题}}
+\phantomsection\label{ux4e60ux9898}
+\begin{itemize}
+\tightlist
+\item
+  \textbf{1} 除了 OR 和 AND 逻辑门外，还有 NOR（NOT-OR）和
+  NAND（NOT-AND）门。请使用基本逻辑门结构来构建它们。
+\item
+  \textbf{2} 在某些应用中还会使用 XOR 门，请使用 OR 和 AND
+  逻辑门构建该门。
+\item
+  \textbf{3} FPGA 并非实现数字系统的唯一设备，请研究过去开发的类似设备。
+\item
+  \textbf{4} Artix-7 FPGA 是我们在本书中考虑的系列，但 Xilinx 还有其他
+  FPGA 系列，请选择两个系列并将其属性与 Artix-7 FPGA 进行比较。
+\item
+  \textbf{5} Xilinx 并非市场上唯一的 FPGA 生产商，请研究其他生产商。
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \begin{enumerate}
+    [a.]
+    \tightlist
+    \item
+      对 FPGA 开发商的市场份额进行评论。
+    \end{enumerate}
+  \item
+    \begin{enumerate}
+    [a.]
+    \setcounter{enumi}{1}
+    \tightlist
+    \item
+      如果可能，比较不同生产商开发的 FPGA 的通用属性。
+    \end{enumerate}
+  \end{itemize}
+\item
+  \textbf{6} 微控制器和 FPGA 的主要区别是什么？
+\end{itemize}
+\end{block}
 \end{frame}
 
 \end{document}

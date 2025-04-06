@@ -246,6 +246,368 @@ module fifo
 
 endmodule
 ```
+---
+
+### **1. 模块 `addr_gen`（地址生成器/计数器）**
+#### **功能概述**
+这是一个循环地址生成器，用于生成递增的地址信号。当使能信号 `en` 有效且未达到最大地址时，地址递增；到达最大值后自动归零。支持异步复位。
+
+#### **关键代码分析**
+- **参数定义**
+  ```verilog
+  parameter MAX_DATA = 256;        // 最大地址范围（默认256）
+  localparam AWIDTH = $clog2(MAX_DATA); // 地址位宽（自动计算，如256对应8位）
+  ```
+  - `MAX_DATA` 定义地址范围（0 到 `MAX_DATA-1`）。
+  - `$clog2` 是 SystemVerilog 函数，计算地址位宽。例如，`MAX_DATA=256` 时，`AWIDTH=8`。
+
+- **地址更新逻辑**
+  ```verilog
+  always @(posedge clk or posedge rst) begin
+    if (rst) 
+      addr <= 0;                 // 异步复位，地址归零
+    else if (en) begin
+      if ({'0, addr} == MAX_DATA-1)
+        addr <= 0;               // 到达最大地址时归零
+      else
+        addr <= addr + 1;        // 正常递增
+    end
+  end
+  ```
+  - **异步复位**：`rst` 信号优先于时钟，直接清零地址。
+  - **地址递增**：在 `en` 有效时递增地址。
+  - **循环逻辑**：`{'0, addr}` 将 `addr` 扩展为足够宽的整数，确保比较正确。当地址达到 `MAX_DATA-1` 时归零。
+
+#### **潜在问题**
+- 若 `MAX_DATA` 不是 2 的幂（如 200），`AWIDTH` 会向上取整（如 8 位），此时实际地址范围是 0-255，但 `MAX_DATA-1=199`，导致 200-255 的地址无法被使用，可能浪费存储空间。需确保 `MAX_DATA` 是 2 的幂。
+
+---
+
+### **2. 模块 `fifo`（同步 FIFO）**
+#### **功能概述**
+实现一个同步 FIFO（First-In-First-Out）队列，支持同时读写，读优先于写。通过两个 `addr_gen` 实例分别管理读写地址，并维护数据计数器 `count`。
+
+#### **关键代码分析**
+- **存储结构**
+  ```verilog
+  reg [7:0] data [MAX_DATA-1:0]; // 存储器，深度 MAX_DATA，位宽 8
+  always @(posedge clk) begin
+    if (wen)
+      data[waddr] <= wdata;      // 写操作
+    rdata <= data[raddr];        // 读操作（同步读）
+  end
+  ```
+  - **写操作**：在 `wen` 有效时，将 `wdata` 写入 `waddr` 地址。
+  - **读操作**：每个周期更新 `rdata` 为 `raddr` 地址的值（同步读）。
+
+- **地址生成器实例化**
+  ```verilog
+  addr_gen #(.MAX_DATA(MAX_DATA)) fifo_writer (.en(wen), ...); // 写地址生成
+  addr_gen #(.MAX_DATA(MAX_DATA)) fifo_reader (.en(ren), ...); // 读地址生成
+  ```
+  - 写地址 `waddr` 在 `wen` 有效时递增。
+  - 读地址 `raddr` 在 `ren` 有效时递增。
+
+- **计数器 `count` 逻辑**
+  ```verilog
+  always @(posedge clk or posedge rst) begin
+    if (rst)
+      count <= 0;                     // 复位清零
+    else if (wen && !ren)
+      count <= count + 1;             // 只写不读，计数加1
+    else if (ren && !wen)
+      count <= count - 1;             // 只读不写，计数减1
+  end
+  ```
+  - `count` 表示 FIFO 中当前数据数量，位宽为 `AWIDTH+1`（例如 MAX_DATA=256 时，`count` 是 9 位，范围 0-256）。
+  - 同时读写时 `count` 不变。
+
+#### **同步读写特性**
+- **读优先于写**：在同一个时钟周期内，写入的数据在下一周期才能被读取，确保当前周期读取的是旧数据。
+- **无空满保护**：代码未检查 `count` 的边界（如 `count == 0` 时禁止读，`count == MAX_DATA` 时禁止写），需外部逻辑处理。
+
+#### **潜在问题**
+- **溢出/下溢风险**：若在 FIFO 已满时继续写入（或为空时继续读取），会导致数据覆盖或无效读取。需添加 `full` 和 `empty` 信号。
+
+---
+
+### **整体设计总结**
+- **地址生成器**：循环生成读写地址，支持异步复位。
+- **FIFO 存储**：同步读写，读操作优先。
+- **计数器逻辑**：跟踪 FIFO 中数据数量，但缺少空满保护。
+- **扩展性建议**：
+  - 添加 `full` 和 `empty` 信号：`full = (count == MAX_DATA)`，`empty = (count == 0)`。
+  - 若需支持非 2 的幂次 `MAX_DATA`，需修改地址生成器的循环条件。
+
+通过这段代码，可以学习到同步 FIFO 的基本实现方法，包括地址管理、数据存储和状态跟踪。
+
+---
+
+### **1. 测试平台结构**
+
+**代码清单 2**  
+`fifo_tb.v`
+
+```verilog
+module fifo_tb;
+    // 测试参数设置
+    parameter MAX_DATA = 4;       // 使用较小深度便于测试
+    localparam AWIDTH = $clog2(MAX_DATA);
+    
+    // 输入信号
+    reg clk, rst;
+    reg wen, ren;
+    reg [7:0] wdata;
+    
+    // 输出信号
+    wire [7:0] rdata;
+    wire [AWIDTH:0] count;
+    
+    // 实例化被测FIFO
+    fifo #(.MAX_DATA(MAX_DATA)) dut (
+        .clk(clk),
+        .rst(rst),
+        .wen(wen),
+        .ren(ren),
+        .wdata(wdata),
+        .rdata(rdata),
+        .count(count)
+    );
+    
+    // 生成时钟（周期10ns）
+    initial clk = 0;
+    always #5 clk = ~clk;
+    
+    // 主测试流程
+    initial begin
+        // 初始化信号
+        wen = 0;
+        ren = 0;
+        wdata = 0;
+        rst = 1;
+        
+        // 复位操作（15ns后释放）
+        #15 rst = 0;
+        
+        // 测试用例1：基本写操作
+        $display("\n=== Test 1: Basic write ===");
+        wen = 1;
+        repeat(MAX_DATA) begin
+            wdata = $random;
+            @(posedge clk);
+            #1;
+            $display("Write: 0x%h | Count: %0d", wdata, count);
+        end
+        wen = 0;
+        
+        // 验证计数
+        if(count !== MAX_DATA)
+            $display("Error: Expected count %0d, got %0d", MAX_DATA, count);
+        
+        // 测试用例2：基本读操作
+        $display("\n=== Test 2: Basic read ===");
+        ren = 1;
+        repeat(MAX_DATA) begin
+            @(posedge clk);
+            #1;
+            $display("Read: 0x%h | Count: %0d", rdata, count);
+        end
+        ren = 0;
+        
+        // 验证空状态
+        if(count !== 0)
+            $display("Error: Expected count 0, got %0d", count);
+            
+        // 测试用例3：同时读写
+        $display("\n=== Test 3: Concurrent R/W ===");
+        wen = 1;
+        ren = 1;
+        repeat(4) begin
+            wdata = $random;
+            @(posedge clk);
+            #1;
+            $display("Write: 0x%h | Read: 0x%h | Count: %0d", 
+                    wdata, rdata, count);
+        end
+        wen = 0;
+        ren = 0;
+        
+        // 测试用例4：边界条件测试
+        $display("\n=== Test 4: Boundary cases ===");
+        
+        // 写满测试
+        wen = 1;
+        repeat(MAX_DATA+2) begin
+            wdata = $urandom;
+            @(posedge clk);
+        end
+        wen = 0;
+        $display("Overflow count: %0d", count);
+        
+        // 读空测试
+        ren = 1;
+        repeat(MAX_DATA+2) @(posedge clk);
+        ren = 0;
+        $display("Underflow count: %0d", count);
+        
+        // 结束仿真
+        #100;
+        $display("\nTestbench completed");
+        $finish;
+    end
+    
+    // 波形记录（可选）
+    initial begin
+        $dumpfile("fifo.vcd");
+        $dumpvars(0, fifo_tb);
+    end
+endmodule
+```
+以下是对提供的 Verilog 测试平台代码的逐步解析和说明：
+
+---
+
+#### **模块定义与信号声明**
+```verilog
+module fifo_tb;
+    parameter MAX_DATA = 4;       // 测试深度设为4，便于快速验证
+    localparam AWIDTH = $clog2(MAX_DATA); // AWIDTH=2 (2^2=4)
+    
+    // 输入信号
+    reg clk, rst;
+    reg wen, ren;
+    reg [7:0] wdata;
+    
+    // 输出信号
+    wire [7:0] rdata;
+    wire [AWIDTH:0] count;        // 计数器位宽=3 (0~4)
+    
+    // 实例化被测FIFO
+    fifo #(.MAX_DATA(MAX_DATA)) dut (...);
+```
+- **设计简化**：将 FIFO 深度设为 4，加速测试并更容易观察边界条件。
+- **信号映射**：测试平台的输入/输出信号与 FIFO 模块直接对接。
+
+---
+
+### **2. 时钟生成**
+```verilog
+initial clk = 0;
+always #5 clk = ~clk;  // 周期10ns，占空比50%
+```
+- 生成周期为 10ns 的时钟信号，用于驱动同步逻辑。
+
+---
+
+### **3. 主测试流程**
+#### **初始化与复位**
+```verilog
+initial begin
+    wen = 0; ren = 0; wdata = 0; rst = 1;
+    #15 rst = 0;  // 15ns后释放复位
+end
+```
+- 初始状态：所有控制信号置零，复位信号 (`rst`) 有效。
+- 复位释放：15ns 后 `rst` 置零，确保复位信号覆盖至少一个时钟周期。
+
+---
+
+### **4. 测试用例详解**
+#### **测试用例1：基本写操作**
+```verilog
+$display("\n=== Test 1: Basic write ===");
+wen = 1;
+repeat(MAX_DATA) begin
+    wdata = $random;  // 生成随机数据
+    @(posedge clk);   // 等待时钟上升沿
+    #1;               // 等待信号稳定
+    $display("Write: 0x%h | Count: %0d", wdata, count);
+end
+wen = 0;
+```
+- **操作**：连续写入 4 次随机数据。
+- **检查点**：
+  - 每次写入后计数器 `count` 应递增。
+  - 写入完成后 `count` 应等于 4，表示 FIFO 满。
+
+#### **测试用例2：基本读操作**
+```verilog
+$display("\n=== Test 2: Basic read ===");
+ren = 1;
+repeat(MAX_DATA) begin
+    @(posedge clk);
+    #1;
+    $display("Read: 0x%h | Count: %0d", rdata, count);
+end
+ren = 0;
+```
+- **操作**：连续读取 4 次数据。
+- **检查点**：
+  - 每次读取后计数器 `count` 应递减。
+  - 读取完成后 `count` 应等于 0，表示 FIFO 空。
+
+#### **测试用例3：同时读写**
+```verilog
+$display("\n=== Test 3: Concurrent R/W ===");
+wen = 1; ren = 1;
+repeat(4) begin
+    wdata = $random;
+    @(posedge clk);
+    #1;
+    $display("Write: 0x%h | Read: 0x%h | Count: %0d", wdata, rdata, count);
+end
+```
+- **操作**：同时进行 4 次写和读。
+- **检查点**：
+  - 计数器 `count` 应保持不变（读写操作抵消）。
+  - 读取的数据应比写入的数据滞后一个周期（同步 FIFO 特性）。
+
+#### **测试用例4：边界条件测试**
+```verilog
+$display("\n=== Test 4: Boundary cases ===");
+
+// 写满测试（尝试写入6次，超过容量）
+wen = 1;
+repeat(MAX_DATA+2) begin
+    wdata = $urandom;
+    @(posedge clk);
+end
+wen = 0;
+$display("Overflow count: %0d", count);  // 预期count=6
+
+// 读空测试（尝试读取6次，超过容量）
+ren = 1;
+repeat(MAX_DATA+2) @(posedge clk);
+ren = 0;
+$display("Underflow count: %0d", count); // 预期count=7（3位无符号数）
+```
+- **操作**：故意触发溢出（写满后继续写）和下溢（读空后继续读）。
+- **检查点**：
+  - **溢出**：`count` 超过 `MAX_DATA`（设计缺陷，需后续修复）。
+  - **下溢**：`count` 下溢为最大值（如 7），导致逻辑错误。
+
+---
+
+### **5. 波形记录与仿真结束**
+```verilog
+initial begin
+    $dumpfile("fifo.vcd");
+    $dumpvars(0, fifo_tb);  // 记录所有信号波形
+end
+
+#100;
+$display("\nTestbench completed");
+$finish;
+```
+- 使用 `$dumpvars` 生成波形文件 (`fifo.vcd`)，便于使用 GTKWave 等工具调试。
+- 仿真结束后打印完成信息并终止。
+
+---
+
+该测试平台覆盖了 FIFO 的基本功能，包括正常读写、并发操作和边界条件，但需进一步完善自动检查机制以提升验证效率。通过波形分析和关键测试用例，可清晰暴露设计中的缺陷（如无空满保护），为后续修复提供依据。
+
+**iverilog仿真结果**  
+![fifo](img3/fifo.png)
 
 虽然开源的 `read_verilog` 前端在处理有效的 Verilog 输入时通常表现良好，但它提供的错误处理和报告功能并不完善。因此，在运行 Yosys 之前，强烈建议使用诸如 `verilator` 这样的外部工具。我们可以通过调用 `verilator --lint-only fifo.v` 来快速检查设计的 Verilog 语法。如果没有任何的语法错误，命令窗口就不会有任何的错误信息输出。
 
@@ -480,7 +842,7 @@ Optimizing module fifo.
 由于我们刚刚开始，让我们从 `hierarchy -top addr_gen` 开始。该命令声明顶层模块是 `addr_gen`，其他所有内容都可以丢弃。
 
 **代码清单 3**  
-`addr_gen` 模块源代码
+`addr_gen.v` 模块源代码
 
 ```verilog
 module addr_gen 
@@ -504,6 +866,307 @@ module addr_gen
 		end
 endmodule //addr_gen
 ```
+以下是对所提供Verilog代码的详细解析：
+
+---
+
+#### 模块定义与参数
+```verilog
+module addr_gen 
+#(  parameter MAX_DATA=256,
+    localparam AWIDTH = $clog2(MAX_DATA)
+) (
+    input en, clk, rst,
+    output reg [AWIDTH-1:0] addr
+);
+```
+- **功能**：该模块用于生成循环递增的地址。
+- **参数**：
+  - `MAX_DATA`：地址范围的最大值，默认为256。
+  - `AWIDTH`：地址位宽，由`$clog2(MAX_DATA)`自动计算得出。若`MAX_DATA=256`，则`AWIDTH=8`。
+- **端口**：
+  - `en`：使能信号，控制地址递增。
+  - `clk`：时钟信号。
+  - `rst`：异步复位信号。
+  - `addr`：输出地址，位宽为`AWIDTH`。
+
+---
+
+#### 初始值设置
+```verilog
+initial addr = 0;
+```
+- **行为**：在仿真开始时，将`addr`初始化为0。
+- **注意**：`initial`语句在综合中可能被忽略，实际硬件行为由复位逻辑决定。
+
+---
+
+#### 核心逻辑
+```verilog
+always @(posedge clk or posedge rst)
+    if (rst)
+        addr <= 0;
+    else if (en) begin
+        if ({'0, addr} == MAX_DATA-1)
+            addr <= 0;
+        else
+            addr <= addr + 1;
+    end
+```
+- **异步复位**：当`rst`为高电平时，立即将`addr`清零。
+- **递增逻辑**：
+  - 在时钟上升沿，若`en`有效且未复位，则执行以下操作：
+    1. **循环检查**：比较当前地址`addr`是否等于`MAX_DATA-1`。
+       - `{'0, addr}`：将`addr`高位补零，扩展至与`MAX_DATA-1`相同位宽，确保比较正确性。
+    2. **归零或递增**：
+       - 若相等，`addr`归零，实现循环。
+       - 否则，`addr`加1。
+
+---
+
+#### 关键设计点
+1. **地址位宽计算**：
+   - `$clog2(MAX_DATA)`确保地址位宽最小化。例如：
+     - `MAX_DATA=1000` → `AWIDTH=10`（因`2^10=1024 ≥ 1000`）。
+     - `MAX_DATA=256` → `AWIDTH=8`。
+
+2. **循环行为**：
+   - 地址在`0`到`MAX_DATA-1`之间循环，严格限制在用户定义范围内。
+   - 例：若`MAX_DATA=200`，地址范围为`0~199`，到达199后归零。
+
+3. **复位与初始化**：
+   - 异步复位确保立即响应复位信号。
+   - `initial`语句仅用于仿真，实际硬件依赖复位信号初始化。
+
+4. **位宽扩展**：
+   - `{'0, addr}`显式扩展位宽，避免比较时的隐式符号扩展问题，增强代码健壮性。
+
+---
+
+#### 潜在问题与改进
+1. **`MAX_DATA`非2的幂**：
+   - 若`MAX_DATA=300`，`AWIDTH=9`（`2^9=512`），地址最大值为`299`，此时逻辑正确。
+   - 但若`en`持续有效且外部未限制，地址仍会从`299`归零，无越界风险。
+
+2. **综合与初始化**：
+   - 实际硬件中，建议依赖复位信号而非`initial`语句初始化寄存器。
+
+3. **位宽优化**：
+   - `{'0, addr}`可简化为`addr`，因Verilog默认无符号数高位补零比较，但显式扩展更清晰。
+
+---
+
+#### 应用场景
+- **存储器访问**：循环遍历存储器的连续地址。
+- **状态机控制**：生成周期性状态或索引。
+- **数据流管理**：控制缓冲区的读写指针。
+
+---
+
+#### 示例波形
+- **复位阶段**：`rst=1` → `addr=0`。
+- **递增阶段**：`rst=0, en=1` → `addr`每周期加1。
+- **循环归零**：当`addr=MAX_DATA-1`时，下一周期归零。
+
+---
+### 测试流程
+
+**代码清单 4**  
+`tb_addr_gen.v` 模块testbench
+
+```verilog
+`timescale 1ns/1ps
+
+module tb_addr_gen;
+    reg clk = 0;
+    reg rst, en;
+    wire [7:0] addr;
+
+    addr_gen #(.MAX_DATA(256)) uut (
+        .en(en),
+        .clk(clk),
+        .rst(rst),
+        .addr(addr)
+    );
+
+    // 生成时钟（10ns周期）
+    always #5 clk = ~clk;
+
+    integer i;
+    reg [7:0] expected;
+
+    initial begin
+        $dumpfile("tb_addr_gen.vcd");
+        $dumpvars(0, tb_addr_gen);  // 记录所有信号
+
+        // 初始化信号
+        rst = 1;
+        en = 0;
+        #20 rst = 0;  // 复位释放
+
+        // 测试1：en=0时地址不变
+        en = 0;
+        repeat(2) @(posedge clk);
+        if (addr !== 8'd0) $error("Test1 Failed");
+        else $display("Test1 Passed");
+
+        // 测试2：地址递增至255后回绕
+        en = 1;
+        expected = 0;
+        for (i = 0; i < 256; i = i + 1) begin
+            @(posedge clk);
+            #1;
+            if (addr !== expected) $error("Test2 Failed at step %0d", i);
+            expected = (expected == 255) ? 0 : expected + 1;
+        end
+        $display("Test2 Passed");
+
+        // 测试3：回绕后继续递增
+        @(posedge clk);
+        #1;
+        if (addr !== 8'd1) $error("Test3 Failed");
+        else $display("Test3 Passed");
+
+        // 测试4：en=0时地址不变
+        en = 0;
+        repeat(2) @(posedge clk);
+        #1;
+        if (addr !== 8'd1) $error("Test4 Failed");
+        else $display("Test4 Passed");
+
+        // 测试5：异步复位
+        en = 1;
+        @(negedge clk);  // 在时钟低电平触发复位
+        rst = 1;
+        #1;
+        if (addr !== 8'd0) $error("Test5 Failed");
+        @(posedge clk);
+        #1;
+        if (addr !== 8'd0) $error("Test5 Failed");
+        rst = 0;
+        $display("Test5 Passed");
+
+        $display("All Tests Passed");
+        $finish;
+    end
+endmodule
+```
+以下是代码的详细解析：
+
+### 模块结构
+```verilog
+`timescale 1ns/1ps
+module tb_addr_gen;
+    reg clk = 0;
+    reg rst, en;
+    wire [7:0] addr;
+    
+    addr_gen #(.MAX_DATA(256)) uut (.en(en), .clk(clk), .rst(rst), .addr(addr));
+    
+    always #5 clk = ~clk;  // 10ns周期时钟
+```
+- **时钟生成**：通过`always`块生成周期为10ns（5ns高电平+5ns低电平）的时钟信号。
+- **实例化被测模块**：`addr_gen`模块被实例化为`uut`，设置最大数据`MAX_DATA`为256，对应8位地址线。
+
+---
+
+#### 1. 初始化
+```verilog
+$dumpfile("tb_addr_gen.vcd");
+$dumpvars(0, tb_addr_gen);
+rst = 1; en = 0;
+#20 rst = 0;  // 复位20ns后释放
+```
+- 初始化波形记录文件和信号。
+- 复位信号`rst`保持高电平20ns后释放，确保模块初始状态正确。
+
+---
+
+#### 2. 测试1：`en=0`时地址不变
+```verilog
+en = 0;
+repeat(2) @(posedge clk);
+if (addr !== 8'd0) $error("Test1 Failed");
+```
+- 使能信号`en`置0，等待2个时钟周期。
+- 验证地址`addr`保持初始值0，确认模块在非使能状态下不递增。
+
+---
+
+#### 3. 测试2：地址递增至255后回绕
+```verilog
+en = 1;
+expected = 0;
+for (i=0; i<256; i=i+1) begin
+    @(posedge clk);
+    #1;  // 等待信号稳定
+    if (addr !== expected) $error(...);
+    expected = (expected==255) ? 0 : expected+1;
+}
+```
+- 使能信号`en`置1，循环256次，每次检查地址是否正确递增。
+- `expected`变量跟踪预期值，达到255后归零，验证地址回绕功能。
+
+---
+
+#### 4. 测试3：回绕后继续递增
+```verilog
+@(posedge clk);
+#1;
+if (addr !== 8'd1) $error(...);
+```
+- 在测试2结束后，下一个时钟周期检查地址是否从0递增到1，确认回绕逻辑正确。
+
+---
+
+#### 5. 测试4：再次验证`en=0`时地址不变
+```verilog
+en = 0;
+repeat(2) @(posedge clk);
+if (addr !== 8'd1) $error(...);
+```
+- 再次禁用使能信号，等待2个周期后地址应保持1，确保模块在非使能状态下冻结地址。
+
+---
+
+#### 6. 测试5：异步复位测试
+```verilog
+en = 1;
+@(negedge clk);  // 时钟低电平时触发复位
+rst = 1;
+#1;
+if (addr !== 8'd0) $error(...);  // 立即检查复位生效
+@(posedge clk);
+#1;
+if (addr !== 8'd0) $error(...);  // 时钟上升沿后保持0
+rst = 0;
+```
+- 在时钟低电平时激活复位，验证地址立即归零（异步复位特性）。
+- 下一个上升沿后地址仍为0，确认复位释放后模块从0开始。
+
+---
+
+### 关键设计要点
+1. **复位机制**：测试5验证了复位是异步的，立即生效且独立于时钟。
+2. **使能控制**：通过`en`信号控制地址递增，确保模块仅在使能时工作。
+3. **边界条件**：测试2覆盖了地址从0到255的全范围，验证回绕逻辑。
+4. **时序检查**：使用`#1`延迟避开时序竞争，确保采样时信号稳定。
+
+---
+
+### 潜在改进点
+- **随机化测试**：可加入随机化的`en`和`rst`信号，增强测试覆盖率。
+- **错误注入**：模拟极端情况（如复位在地址255时触发）。
+- **代码复用**：将重复的测试逻辑封装为任务或函数，提高可维护性。
+
+此测试平台全面验证了`addr_gen`模块的核心功能，包括正常递增、回绕、使能控制和异步复位，确保了模块的可靠性。
+
+
+**仿真结果**
+
+![addr_gen](img3/addr_gen_sim.png)
+
+
 首先输入命令：`yosys addr_gen.v`，可以得到下面的结果
 ```bash
 
