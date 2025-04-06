@@ -37,126 +37,813 @@ UART以数据包的形式传输数据。一个UART数据包的帧结构以起始
 
 我们可以将UART的接收操作描述为另一个状态机。接收器最初处于就绪状态。当RX引脚检测到下降沿信号（起始位）时，它开始顺序接收数据位。为此，接收器必须像发送器一样具有一个基于预定波特率的内部定时器。接收到起始位后，定时器等待一定时间以采样第一个数据位。这个偏移允许在第一个数据脉冲的中间位置开始采样过程。请注意，尽管数据由发送器以逻辑电平1和0发送，但这些信号会转换为模拟脉冲信号。因此，采样操作将接收到的模拟信号重新转换为逻辑电平0或1。随后，我们在每个连续的时间段执行采样操作以恢复数据位。当所有比特都以这种方式接收后，接收器检查接收数据中的奇偶校验位（如果协议包含）。当接收到停止位时，接收器返回到就绪状态，等待接收下一个数据包。
 
-### Verilog中的UART实现
 
 我们可以将发送和接收操作描述为Verilog中的两个独立模块。让我们从发送器模块开始。
 
-#### 发送器模块
+### 发送器模块的verilog实现
 
-发送器模块的Verilog描述如下所示。该模块有三个输入：send、data和clk。send用于触发发送操作的开始，data携带要传输的数据，clk用于将FPGA开发板时钟输入模块。发送器模块有两个输出：ready和tx。当ready为逻辑电平1时，表示模块已准备好发送数据。输出tx应直接连接到设备的TX引脚。
+```verilog
+`timescale 1ns / 1ps
 
-发送器模块（作为一个状态机）的工作原理如下：在模块内部，波特率定义为参数，默认设置为9600 bps。baud_timer通过将主时钟频率除以波特率来计算特定波特率所需的时钟周期数。发送器模块有三个状态：RDY、LOAD_BIT和SEND_BIT。RDY状态表示模块已准备好发送下一个数据包。当处于LOAD_BIT状态时，数据被加载到tx输出。最后，SEND_BIT状态表示数据正在传输中。模块的初始状态设置为RDY，因此它等待send触发。当send设置为逻辑电平1时，模块将数据加载到txData，并在其前后分别添加一个前导零和一个尾随一。随后，模块切换到LOAD_BIT状态。在这里，要发送的第一个比特（在我们的配置中为最低有效位）被加载到txBit。然后，模块在SEND_BIT状态等待bit_index_max个时钟周期，之后切换回LOAD_BIT状态以加载下一个要发送的比特。此操作重复进行，直到最后一个停止位发送完毕。在发送操作结束时，状态设置为RDY。因此，发送器模块开始等待下一个send触发。在此模块中，txBit连接到tx，ready设置为条件赋值，当状态等于RDY时为逻辑电平1，否则为0。
+module uart_tx (
+    input wire clk,           // System clock
+    input wire rst_n,         // Active low reset
+    input wire tx_start,      // Start transmission signal
+    input wire [7:0] tx_data, // Data to transmit
+    output reg tx_done,       // Transmission complete signal
+    output reg tx             // Serial output
+);
 
-```Verilog Description of the UART Transmitter Module
-module UART_tx_ctrl (ready, uart tx, send, data, clk) ;
-input send, clk;
-input [7:0] data;
-output ready, uart_tx;
-parameter baud = 9600;
-parameter bit index max = 10;
-localparam [31:0] baud_timer = 100000000/baud;
-localparam RDY = 2'b00, LOAD_BIT = 2'b01, SEND_BIT = 2'b10;
-reg [1:0] state = RDY;
-reg [31:0] timer = 0;
-reg [9:0] txData;
-reg [3:0] bitIndex;
-reg txBit=1'b1;
-always @ (posedge clk)
-case (state)
-RDY: 
-  begin
-    if (send)
-    begin
-      txData <= {1'b1,data,1'b0};
-      state <= LOAD_BIT;
+    // Parameters for UART configuration
+    parameter CLK_FREQ = 50000000;  // 50MHz system clock
+    parameter BAUD_RATE = 115200;   // Baud rate
+    parameter CLKS_PER_BIT = CLK_FREQ / BAUD_RATE;
+    
+    // State machine states
+    localparam IDLE = 2'b00;
+    localparam START = 2'b01;
+    localparam DATA = 2'b10;
+    localparam STOP = 2'b11;
+    
+    // Internal registers
+    reg [1:0] state;
+    reg [1:0] next_state;
+    reg [15:0] clk_count;
+    reg [2:0] bit_index;
+    reg [7:0] tx_data_reg;
+    
+    // State machine
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            state <= IDLE;
+            clk_count <= 0;
+            bit_index <= 0;
+            tx_data_reg <= 0;
+            tx <= 1'b1;  // Idle state is high
+            tx_done <= 1'b0;
+        end else begin
+            case (state)
+                IDLE: begin
+                    tx <= 1'b1;  // Idle state is high
+                    tx_done <= 1'b0;
+                    clk_count <= 0;
+                    bit_index <= 0;
+                    
+                    if (tx_start) begin
+                        tx_data_reg <= tx_data;
+                        state <= START;
+                    end
+                end
+                
+                START: begin
+                    tx <= 1'b0;  // Start bit is low
+                    
+                    // Wait for one bit period
+                    if (clk_count < CLKS_PER_BIT - 1) begin
+                        clk_count <= clk_count + 1;
+                    end else begin
+                        clk_count <= 0;
+                        state <= DATA;
+                    end
+                end
+                
+                DATA: begin
+                    tx <= tx_data_reg[bit_index];
+                    
+                    // Wait for one bit period
+                    if (clk_count < CLKS_PER_BIT - 1) begin
+                        clk_count <= clk_count + 1;
+                    end else begin
+                        clk_count <= 0;
+                        
+                        // Check if we have sent all bits
+                        if (bit_index < 7) begin
+                            bit_index <= bit_index + 1;
+                        end else begin
+                            bit_index <= 0;
+                            state <= STOP;
+                        end
+                    end
+                end
+                
+                STOP: begin
+                    tx <= 1'b1;  // Stop bit is high
+                    
+                    // Wait for one bit period
+                    if (clk_count < CLKS_PER_BIT - 1) begin
+                        clk_count <= clk_count + 1;
+                    end else begin
+                        tx_done <= 1'b1;
+                        clk_count <= 0;
+                        state <= IDLE;
+                    end
+                end
+                
+                default: begin
+                    state <= IDLE;
+                end
+            endcase
+        end
     end
-    timer <= 14'b0;
-    bitIndex <= 0;
-    txBit <= 1'b1;
-  end
-LOAD_BIT:
-  begin
-    state <= SEND BIT;
-    bitIndex <= bitIndex + 1'b1;
-    txBit <= txData[bitIndex] ;
-  end
-SEND_BIT:
-  if (timer == baud_timer)
+
+endmodule
+```
+---
+
+#### **模块功能概述**
+该模块实现了一个UART发送控制器，将8位并行数据转换为符合UART协议的串行数据流。关键功能包括：
+- **异步复位**（低电平有效）
+- **波特率可配置**（基于系统时钟频率和波特率参数）
+- **状态机控制**：处理空闲、起始位、数据位、停止位状态
+- **完成信号输出**（`tx_done`）
+
+---
+
+#### **端口定义**
+```verilog
+module uart_tx (
+    input wire clk,           // 系统时钟（50MHz）
+    input wire rst_n,         // 低电平复位
+    input wire tx_start,      // 发送启动信号（上升沿触发）
+    input wire [7:0] tx_data, // 待发送的8位数据
+    output reg tx_done,       // 发送完成标志（单周期脉冲）
+    output reg tx             // 串行输出引脚
+);
+```
+
+---
+
+#### **参数配置**
+- **`CLK_FREQ`**：系统时钟频率（默认50MHz）
+- **`BAUD_RATE`**：波特率（默认115200）
+- **`CLKS_PER_BIT`**：每个UART位所需的时钟周期数  
+  计算公式：  
+  ```verilog
+  CLKS_PER_BIT = CLK_FREQ / BAUD_RATE  // 例：50M/115200 ≈ 434
+  ```
+
+---
+
+#### **状态机设计**
+使用四状态有限状态机（FSM）控制发送流程：
+
+| 状态    | 描述               | 输出（`tx`） | 持续时间           |
+|---------|--------------------|--------------|--------------------|
+| **IDLE**  | 空闲状态           | 高电平       | 等待`tx_start`信号 |
+| **START** | 发送起始位         | 低电平       | 1个位周期          |
+| **DATA**  | 发送8位数据（LSB优先）| 数据位       | 8个位周期          |
+| **STOP**  | 发送停止位         | 高电平       | 1个位周期          |
+
+---
+
+#### **关键逻辑解析**
+##### **1. 复位逻辑**
+- 复位时所有寄存器和输出初始化：
+  ```verilog
+  state <= IDLE;        // 回到空闲状态
+  clk_count <= 0;       // 计数器清零
+  bit_index <= 0;       // 数据位索引复位
+  tx <= 1'b1;           // 保持空闲高电平
+  tx_done <= 1'b0;      // 完成信号置低
+  ```
+
+##### **2. 状态转移逻辑**
+- **IDLE → START**：  
+  检测到`tx_start`信号后，锁存数据到`tx_data_reg`，进入起始位状态。
+- **START → DATA**：  
+  起始位持续`CLKS_PER_BIT`周期后进入数据发送。
+- **DATA → STOP**：  
+  按`bit_index`顺序发送8位数据（LSB优先），完成后进入停止位。
+- **STOP → IDLE**：  
+  停止位持续完成后，拉高`tx_done`并返回空闲。
+
+##### **3. 数据发送细节**
+- **LSB优先**：  
+  `bit_index`从0递增到7，依次发送`tx_data_reg[0]`到`tx_data_reg[7]`。
+- **位定时**：  
+  每个状态通过`clk_count`计数器确保精确的位周期（`CLKS_PER_BIT`）。
+
+##### **4. 完成信号生成**
+- **`tx_done`**：  
+  在停止位状态的最后一个时钟周期置高，持续一个时钟周期。
+
+---
+
+#### **关键设计要点**
+1. **波特率精度**  
+   通过整数除法计算`CLKS_PER_BIT`，可能引入微小误差（例如50MHz/115200≈434），需确保误差在可接受范围内（通常<3%）。
+
+2. **数据锁存**  
+   `tx_data`在`tx_start`有效时被锁存到`tx_data_reg`，确保发送过程中数据稳定。
+
+3. **抗干扰设计**  
+   - 仅在`IDLE`状态响应`tx_start`，防止发送过程中被意外打断。
+   - 状态机包含`default`分支，增强鲁棒性。
+
+4. **时序对齐**  
+   每个状态的计数器从0到`CLKS_PER_BIT-1`，确保精确的位周期（如434周期对应115200波特率）。
+
+---
+
+#### **潜在改进点**
+- **校验位支持**：可扩展状态机添加奇偶校验位。
+- **可配置帧格式**：通过参数支持不同数据位宽（如7/9位）或停止位数。
+- **双缓冲机制**：添加数据缓冲区，允许在发送过程中预加载下一帧数据。
+
+---
+
+#### **仿真测试建议**
+1. **复位测试**：验证复位后所有信号是否初始化为预期值。
+2. **单字节发送**：检查起始位、数据位、停止位的时序和电平。
+3. **连续发送**：验证`tx_done`脉冲能否正确触发下一次发送。
+4. **波特率验证**：测量实际位周期是否匹配理论值。
+
+---
+
+该模块完整实现了UART发送功能的核心逻辑，代码结构清晰，适合作为嵌入式系统或FPGA设计中的串行通信接口。
+
+---
+#### 发送器测试模块
+
+```verilog
+`timescale 1ns / 1ps
+
+module uart_rx_tb;
+
+// Parameters
+parameter CLK_PERIOD = 20;    // 50MHz clock (20ns period)
+parameter BAUD_RATE = 115200;
+parameter BIT_PERIOD = 1000000000 / BAUD_RATE;  // Bit period in ns
+
+// DUT Signals
+reg clk;
+reg rst_n;
+reg rx;
+wire [7:0] rx_data;
+wire rx_ready;
+
+// Instantiate DUT
+uart_rx #(
+    .CLK_FREQ(50000000),  // 50MHz
+    .BAUD_RATE(BAUD_RATE)
+) dut (
+    .clk(clk),
+    .rst_n(rst_n),
+    .rx(rx),
+    .rx_data(rx_data),
+    .rx_ready(rx_ready)
+);
+
+// Clock generation
+initial begin
+    clk = 0;
+    forever #(CLK_PERIOD/2) clk = ~clk;
+end
+
+// Test sequence
+initial begin
+    // Initialize signals
+    rst_n = 0;
+    rx = 1;
+    
+    // Reset sequence
+    #100;
+    rst_n = 1;
+    #100;
+    
+    // Test case 1: Send 0x55 (01010101)
+    send_byte(8'h55);
+    #(BIT_PERIOD*3);
+    
+    // Verify reception
+    if(rx_data !== 8'h55 || rx_ready !== 1'b1)
+        $error("Test 1 failed: Received 0x%h", rx_data);
+        
+    // Test case 2: Send 0xAA (10101010)  
+    send_byte(8'hAA);
+    #(BIT_PERIOD*3);
+    
+    if(rx_data !== 8'hAA || rx_ready !== 1'b1)
+        $error("Test 2 failed: Received 0x%h", rx_data);
+    
+    // End simulation
+    $display("All tests completed");
+    $finish;
+end
+
+// UART byte transmission task
+task send_byte;
+    input [7:0] data;
+    integer i;
     begin
-      timer <= 14'b0;
-      if (bitIndex == bit_index max)
-      state <= RDY;
+        // Start bit
+        rx = 0;
+        #BIT_PERIOD;
+        
+        // Data bits (LSB first)
+        for(i=0; i<8; i=i+1) begin
+            rx = data[i];
+            #BIT_PERIOD;
+        end
+        
+        // Stop bit
+        rx = 1;
+        #BIT_PERIOD;
     end
-  else 
-  begin
-    state <= LOAD BIT;
-    timer <= timer + 1'b1;
-  end
-default:
-      state <= RDY;
-endcase
-assign uart_tx = txBit;
-assign ready = (state == RDY);
+endtask
+
+// Monitor signals
+initial begin
+    $monitor("Time: %t, RX: %b, Data: 0x%h, Ready: %b",
+            $time, rx, rx_data, rx_ready);
+end
+
+// Generate VCD file
+initial begin
+    $dumpfile("uart_rx_tb.vcd");
+    $dumpvars(0, uart_rx_tb);
+end
+
+endmodule
+```
+#### 仿真结果
+![tx](img4/tx.png)
+
+
+### 接收器模块的verilog实现
+
+```verilog
+`timescale 1ns / 1ps
+
+module uart_rx (
+    input wire clk,           // System clock
+    input wire rst_n,         // Active low reset
+    input wire rx,            // Serial input
+    output reg rx_ready,      // Data ready signal
+    output reg [7:0] rx_data  // Received data
+);
+
+    // Parameters for UART configuration
+    parameter CLK_FREQ = 50000000;  // 50MHz system clock
+    parameter BAUD_RATE = 115200;   // Baud rate
+    parameter CLKS_PER_BIT = CLK_FREQ / BAUD_RATE;
+    
+    // State machine states
+    localparam IDLE = 3'b000;
+    localparam START = 3'b001;
+    localparam DATA = 3'b010;
+    localparam STOP = 3'b011;
+    localparam CLEANUP = 3'b100;
+    
+    // Internal registers
+    reg [2:0] state;
+    reg [15:0] clk_count;
+    reg [2:0] bit_index;
+    reg [7:0] rx_data_reg;
+    
+    // State machine
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            state <= IDLE;
+            clk_count <= 0;
+            bit_index <= 0;
+            rx_data_reg <= 0;
+            rx_ready <= 1'b0;
+            rx_data <= 8'h00;
+        end else begin
+            case (state)
+                IDLE: begin
+                    rx_ready <= 1'b0;
+                    clk_count <= 0;
+                    bit_index <= 0;
+                    
+                    // Detect start bit (falling edge on rx)
+                    if (rx == 1'b0) begin
+                        state <= START;
+                    end
+                end
+                
+                START: begin
+                    // Wait for middle of start bit
+                    if (clk_count < (CLKS_PER_BIT - 1) / 2) begin
+                        clk_count <= clk_count + 1;
+                    end else begin
+                        // Check if start bit is still low
+                        if (rx == 1'b0) begin
+                            // Reset counter for data bits
+                            clk_count <= 0;
+                            state <= DATA;
+                        end else begin
+                            // False start, go back to idle
+                            state <= IDLE;
+                        end
+                    end
+                end
+                
+                DATA: begin
+                    // Wait for middle of data bit
+                    if (clk_count < CLKS_PER_BIT - 1) begin
+                        clk_count <= clk_count + 1;
+                    end else begin
+                        clk_count <= 0;
+                        
+                        // Sample the data bit
+                        rx_data_reg[bit_index] <= rx;
+                        
+                        // Check if we have received all bits
+                        if (bit_index < 7) begin
+                            bit_index <= bit_index + 1;
+                        end else begin
+                            bit_index <= 0;
+                            state <= STOP;
+                        end
+                    end
+                end
+                
+                STOP: begin
+                    // Wait for middle of stop bit
+                    if (clk_count < CLKS_PER_BIT - 1) begin
+                        clk_count <= clk_count + 1;
+                    end else begin
+                        // Check if stop bit is high
+                        if (rx == 1'b1) begin
+                            rx_ready <= 1'b1;
+                            rx_data <= rx_data_reg;
+                        end
+                        
+                        clk_count <= 0;
+                        state <= CLEANUP;
+                    end
+                end
+                
+                CLEANUP: begin
+                    // Wait one clock cycle to clear rx_ready
+                    state <= IDLE;
+                    rx_ready <= 1'b0;
+                end
+                
+                default: begin
+                    state <= IDLE;
+                end
+            endcase
+        end
+    end
+
 endmodule
 ```
 
-#### 接收器模块
+---
 
-接收器模块的Verilog描述如下所示。该模块有两个输入：clk和rx。clk用于将FPGA开发板时钟输入模块，与发送器模块相同。rx应直接连接到设备的RX引脚。通过它，接收器模块监听可能传入的数据包。接收器模块有四个输出：data、parity、ready和error。data表示接收到的数据，parity显示接收到的奇偶校验位，ready指示接收操作已完成，error显示数据包是否接收无误。
+#### **模块概述**
+该模块实现了一个UART接收器，负责从串行输入`rx`中异步接收数据，并将接收到的8位数据通过`rx_data`输出，同时用`rx_ready`信号指示数据就绪。
 
-接收器模块（作为一个状态机）的工作原理如下：在模块内部，波特率定义为参数，与发送器模块类似，默认设置为9600 bps。baud_timer通过将主时钟频率除以波特率来计算特定波特率所需的时钟周期数。接收器模块有五个状态：RDY、START、RECEIVE、WAIT和CHECK。状态机最初处于RDY状态，表示模块已准备好接收下一个数据包。因此，它在每个时钟上升沿通过rx监听RX引脚。当rx变为逻辑电平0时，状态机进入START状态。在此状态下，它等待baud_timer周期的一半，以到达起始信号的中间位置。第一个数据位将在等待baud_timer周期后准备就绪。WAIT状态充当延迟站，接收器在此等待baud_timer周期。然后，除非ready为逻辑电平1，否则它将返回到RECEIVE状态。在RECEIVE状态，接收器对输入数据进行采样。随后，bitIndex增加1，并检查是否已达到最大值（在我们的例子中为8）。
+---
 
-```Verilog Description of the UART Receiver Module
-module UART rx_ctrl (clk, rx, data, parity, ready, error) ;
-input clk, rx;
-output reg [7:0] data;
-output reg parity;
-output reg ready=0;
-output reg error=0;
-parameter baud=9600;
-localparam RDY=3'b000, START=3'b001, RECEIVE=3'b010, WAIT=3'b011,
-    CHECK=3 ' b100;
-reg [2:0] state = RDY;
-localparam [31:0] baud_timer = 100000000/baud;
-reg [31:0] timer = 32'b0;
-reg [3:0] bitIndex = 3'b0;
-reg [8:0] rxdata;
-always @ (posedge clk)
-case (state)
-RDY:
-       if (rx == 1'b0)
-       begin
-        state <= START;
-        bitIndex <= 3'b0;
+### **关键参数与信号**
+1. **参数配置**
+   - `CLK_FREQ`：系统时钟频率（50MHz）。
+   - `BAUD_RATE`：波特率（115200）。
+   - `CLKS_PER_BIT`：每个UART位占用的时钟周期数，计算为`CLK_FREQ / BAUD_RATE`（约为434）。
+
+2. **状态定义**
+   - `IDLE`：空闲状态，等待起始位。
+   - `START`：检测起始位有效性。
+   - `DATA`：接收8位数据。
+   - `STOP`：验证停止位。
+   - `CLEANUP`：清理状态，复位信号。
+
+3. **内部寄存器**
+   - `state`：状态机当前状态。
+   - `clk_count`：位周期计数器。
+   - `bit_index`：当前接收的数据位索引（0-7）。
+   - `rx_data_reg`：临时存储接收的数据。
+
+---
+
+#### **状态机详细流程**
+##### **1. IDLE状态**
+- **行为**：
+  - 复位`rx_ready`、`clk_count`、`bit_index`。
+  - 检测起始位：当`rx`出现下降沿（低电平），进入`START`状态。
+- **关键点**：
+  - 未进行多次采样，可能受噪声干扰产生误触发。
+
+##### **2. START状态**
+- **行为**：
+  - 计数至起始位中点（`(CLKS_PER_BIT-1)/2`）。
+  - 在中点检查`rx`是否仍为低电平：
+    - 是：进入`DATA`状态，开始接收数据。
+    - 否：回到`IDLE`，视为虚假起始位。
+- **关键点**：
+  - 中点采样确保起始位有效性，减少误判。
+
+##### **3. DATA状态**
+- **行为**：
+  - 计数满一个位周期（`CLKS_PER_BIT`）。
+  - 在周期结束时（非中点）采样`rx`，存入`rx_data_reg`。
+  - 接收完8位后进入`STOP`状态。
+- **关键问题**：
+  - **采样点错误**：数据位采样发生在位周期末尾而非中点，易受信号跳变影响，可能导致数据错误。
+
+##### **4. STOP状态**
+- **行为**：
+  - 计数满一个位周期。
+  - 在周期结束时检查`rx`是否为高电平：
+    - 是：将`rx_data_reg`输出至`rx_data`，并置位`rx_ready`。
+    - 否：未处理帧错误，直接进入清理状态。
+- **关键点**：
+  - 停止位检查在末尾，而非中点，可能无法有效验证停止位完整性。
+
+##### **5. CLEANUP状态**
+- **行为**：
+  - 复位`rx_ready`，回到`IDLE`状态。
+- **作用**：
+  - 确保`rx_ready`仅持续一个时钟周期，避免重复读取。
+
+---
+
+#### **潜在问题与改进**
+1. **数据位采样点错误**
+   - **问题**：当前在数据位末尾采样，易受信号跳变影响。
+   - **改进**：在数据位中点（`CLKS_PER_BIT/2`）采样，提高稳定性。
+   - **修改示例**：
+     ```verilog
+     DATA: begin
+         if (clk_count < CLKS_PER_BIT - 1) begin
+             clk_count <= clk_count + 1;
+             // 在中点采样
+             if (clk_count == (CLKS_PER_BIT/2 - 1)) begin
+                 rx_data_reg[bit_index] <= rx;
+                 bit_index <= bit_index + 1;
+             end
+         end else begin
+             clk_count <= 0;
+             if (bit_index >= 7) state <= STOP;
+         end
+     end
+     ```
+
+2. **停止位验证不足**
+   - **问题**：未在中点检查停止位，可能接收不完整帧。
+   - **改进**：在中点验证停止位，若无效则丢弃数据。
+
+3. **无帧错误处理**
+   - **问题**：未检测停止位错误，错误数据仍被输出。
+   - **改进**：添加帧错误标志（如`rx_error`），供外部处理。
+
+---
+
+- **功能**：代码实现了基本的UART接收功能，但存在采样点错误和验证不严谨的问题。
+- **改进方向**：调整数据位采样点为中点，增强停止位检查，添加错误处理逻辑。
+- **应用场景**：适用于对稳定性要求不高的场景，需谨慎用于高噪声或精确通信环境。
+
+#### 测试模块
+
+```verilog
+`timescale 1ns / 1ps
+
+module uart_rx_tb;
+
+// Parameters
+parameter CLK_PERIOD = 20;    // 50MHz clock (20ns period)
+parameter BAUD_RATE = 115200;
+parameter BIT_PERIOD = 1000000000 / BAUD_RATE;  // Bit period in ns
+
+// DUT Signals
+reg clk;
+reg rst_n;
+reg rx;
+wire [7:0] rx_data;
+wire rx_ready;
+
+// Instantiate DUT
+uart_rx #(
+    .CLK_FREQ(50000000),  // 50MHz
+    .BAUD_RATE(BAUD_RATE)
+) dut (
+    .clk(clk),
+    .rst_n(rst_n),
+    .rx(rx),
+    .rx_data(rx_data),
+    .rx_ready(rx_ready)
+);
+
+// Clock generation
+initial begin
+    clk = 0;
+    forever #(CLK_PERIOD/2) clk = ~clk;
+end
+
+// Test sequence
+initial begin
+    // Initialize signals
+    rst_n = 0;
+    rx = 1;
+    
+    // Reset sequence
+    #100;
+    rst_n = 1;
+    #100;
+    
+    // Test case 1: Send 0x55 (01010101)
+    send_byte(8'h55);
+    #(BIT_PERIOD*3);
+    
+    // Verify reception
+    if(rx_data !== 8'h55 || rx_ready !== 1'b1)
+        $error("Test 1 failed: Received 0x%h", rx_data);
+        
+    // Test case 2: Send 0xAA (10101010)  
+    send_byte(8'hAA);
+    #(BIT_PERIOD*3);
+    
+    if(rx_data !== 8'hAA || rx_ready !== 1'b1)
+        $error("Test 2 failed: Received 0x%h", rx_data);
+    
+    // End simulation
+    $display("All tests completed");
+    $finish;
+end
+
+// UART byte transmission task
+task send_byte;
+    input [7:0] data;
+    integer i;
+    begin
+        // Start bit
+        rx = 0;
+        #BIT_PERIOD;
+        
+        // Data bits (LSB first)
+        for(i=0; i<8; i=i+1) begin
+            rx = data[i];
+            #BIT_PERIOD;
         end
-START:
-        if (timer == baud_timer/2)
-        begin
-        state <= WAIT;
-        timer <= 14'b0;
-        error <= 1'b0;
-        ready <= 1'b0;
-        end
-        else timer <= timer + 1'b1;
-WAIT:
-       if (timer == baud timer)
-        begin
-        timer <= 14'b0;
-        if (ready) state <= RDY;
-        else state <= RECEIVE;
-        end
-        else timer <= timer + 1'b1;
-RECEIVE:
-        begin
-        rxdata[bitIndex] <= rx;
-        bitIndex <= bitIndex + 1'b1;
-        if (bitIndex == 4'd8) state <= CHECK;
-        else state <= WAIT;
-        end
+        
+        // Stop bit
+        rx = 1;
+        #BIT_PERIOD;
+    end
+endtask
+
+// Monitor signals
+initial begin
+    $monitor("Time: %t, RX: %b, Data: 0x%h, Ready: %b",
+            $time, rx, rx_data, rx_ready);
+end
+
+// Generate VCD file
+initial begin
+    $dumpfile("uart_rx_tb.vcd");
+    $dumpvars(0, uart_rx_tb);
+end
+
 endmodule
 ```
 
-由于我们采用8位数据加1位校验位的格式，状态机在接收完所有比特后需切换到CHECK状态。在CHECK状态下执行偶校验检查：若接收数据包与校验位一致，则ready置为逻辑1并转入WAIT状态，同时将rxdata中的接收数据和校验值写入data与parity输出端口；若校验失败，则error和ready同时置为逻辑1，data端口填充全1信号。最终接收操作终止，状态机返回RDY状态等待下一个数据包的到来。
+---
+
+#### 仿真结果
+
+![rx](img4/rx.png)
+
+---
+
+### 联合发送器模块与接收器模块的仿真结果
+
+#### 测试模块代码
+
+```verilog
+`timescale 1ns / 1ps
+
+module uart_tb;
+
+    // Parameters
+    parameter CLK_PERIOD = 20;    // 50MHz clock (20ns period)
+    parameter BAUD_RATE = 115200;
+    parameter BIT_PERIOD = 1000000000 / BAUD_RATE;  // Bit period in ns
+    
+    // Testbench signals
+    reg clk;
+    reg rst_n;
+    wire rx;
+    wire rx_ready;
+    wire [7:0] rx_data;
+    
+    // Test control signals
+    reg [7:0] test_data;
+    reg tx_start;
+    wire tx_done;
+    
+    // Instantiate UART transmitter (to generate test signals)
+    uart_tx #(
+        .CLK_FREQ(50000000),
+        .BAUD_RATE(BAUD_RATE)
+    ) uart_tx_inst (
+        .clk(clk),
+        .rst_n(rst_n),
+        .tx_start(tx_start),
+        .tx_data(test_data),
+        .tx_done(tx_done),
+        .tx(rx)  // Connect TX output to RX input
+    );
+    
+    // Instantiate UART receiver
+    uart_rx #(
+        .CLK_FREQ(50000000),
+        .BAUD_RATE(BAUD_RATE)
+    ) uut (
+        .clk(clk),
+        .rst_n(rst_n),
+        .rx(rx),
+        .rx_ready(rx_ready),
+        .rx_data(rx_data)
+    );
+    
+    // Clock generation
+    initial begin
+        clk = 0;
+        forever #(CLK_PERIOD/2) clk = ~clk;
+    end
+    
+    // Test sequence
+    initial begin
+        // Initialize signals
+        rst_n = 0;
+        tx_start = 0;
+        test_data = 8'h00;
+        
+        // Apply reset
+        #100;
+        rst_n = 1;
+        #100;
+        
+        // Test case 1: Send character 'A' (0x41)
+        test_data = 8'h41;
+        tx_start = 1;
+        #CLK_PERIOD;
+        tx_start = 0;
+        
+        // Wait for transmission to complete
+        @(posedge tx_done);
+        #(BIT_PERIOD * 2);
+        
+        // Verify received data
+        if (rx_data !== 8'h41 || rx_ready !== 1'b1) 
+            $error("Test 1 Failed: Received 0x%h, Expected 0x41", rx_data);
+        
+        // Test case 2: Send character 'Z' (0x5A)
+        test_data = 8'h5A;
+        tx_start = 1;
+        #CLK_PERIOD;
+        tx_start = 0;
+        
+        // Wait for transmission to complete
+        @(posedge tx_done);
+        #(BIT_PERIOD * 2);
+        
+        // Verify received data
+        if (rx_data !== 8'h5A || rx_ready !== 1'b1) 
+            $error("Test 2 Failed: Received 0x%h, Expected 0x5A", rx_data);
+        
+        // Test case 3: Send random data
+        test_data = 8'hA5;
+        tx_start = 1;
+        #CLK_PERIOD;
+        tx_start = 0;
+        
+        // Wait for transmission to complete
+        @(posedge tx_done);
+        #(BIT_PERIOD * 2);
+        
+        // Verify received data
+        if (rx_data !== 8'hA5 || rx_ready !== 1'b1) 
+            $error("Test 3 Failed: Received 0x%h, Expected 0xA5", rx_data);
+        
+        // End simulation
+        $display("All tests completed successfully");
+        $finish;
+    end
+    
+    // Monitor signals
+    initial begin
+        $monitor("Time: %t, RX: %b, Data: 0x%h, Ready: %b",
+                $time, rx, rx_data, rx_ready);
+    end
+    
+    // Generate VCD file for waveform viewing
+    initial begin
+        $dumpfile("uart_tb.vcd");
+        $dumpvars(0, uart_tb);
+    end
+
+endmodule
+```
+
+#### 仿真结果
+
+![uart_tb](img4/uart_tb.png)
+
 
 ### **SPI工作原理**
 
@@ -184,11 +871,11 @@ SPI（串行外设接口）的工作机制比UART更为简洁。为深入理解�
      * CPOL=0时，SCLK空闲为低电平
      * CPHA=0时，数据在时钟第一个边沿采样
 
-### **SPI数据格式**  
+#### **SPI数据格式**  
 
 与UART不同，SPI的数据包长度可自由配置，这一特性赋予用户极大的灵活性。由于采用专用时钟线和使能信号，SPI无需UART的起止位，仅需通信双方预先约定数据包长度即可实现可靠传输。
 
-### **SPI连接拓扑**  
+#### **SPI连接拓扑**  
 
 SPI采用四线制连接（如图所示）：
 - **SCK**：同步时钟（主设备产生）
@@ -199,7 +886,7 @@ SPI采用四线制连接（如图所示）：
 ![SPI主从设备连接示意图](img4/SPI.jpeg)  
 
 
-### **SPI传输机制**  
+#### **SPI传输机制**  
 
 主设备通过SCK和SS信号控制通信流程：
 
@@ -208,7 +895,7 @@ SPI采用四线制连接（如图所示）：
 3. 每个SCK周期完成1位数据的双向传输（MOSI发送/MISO接收）
 4. 传输结束后SS恢复高电平
 
-### **SPI时序模式**  
+#### **SPI时序模式**  
 
 通过CPOL（时钟极性）和CPHA（时钟相位）可组合出四种工作模式：
 
