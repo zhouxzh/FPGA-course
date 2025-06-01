@@ -13,3 +13,16 @@ src/.vuepress/dist/
 *.toc
 *.vrb
 *.xdv
+*.ccl
+*.ldf
+*.lpf
+*.xml
+*.db
+*.asd
+*.cam
+*.hrr
+*.ncd
+*.rpt
+*.vcd
+*/*/impl1/*
+*/*/*.dir/*

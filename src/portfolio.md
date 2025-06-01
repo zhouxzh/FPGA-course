@@ -7,7 +7,7 @@ welcome: 👋 你好，我是
 name: 周贤中
 # avatar: https://theme-hope-assets.vuejs.press/hero/conan.png
 avatar: /assets/image/Tom.png
-description: 一个业余的科学教育工作者
+description: 一个业余的码农
 social: true
 email: zhouxzh@gdut.edu.cn
 timeline: false
