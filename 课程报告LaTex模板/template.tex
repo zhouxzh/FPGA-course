@@ -1,0 +1,246 @@
+% !TeX program = xelatex
+% FPGA课程设计报告模板
+\documentclass[12pt, a4paper]{book}
+\usepackage[UTF8, scheme=plain]{ctex} % 中文支持
+\usepackage{graphicx} % 插入图片
+\usepackage{geometry} % 页面设置
+\usepackage{titlesec} % 标题格式
+\usepackage{fancyhdr} % 页眉页脚
+\usepackage{booktabs} % 专业表格
+\usepackage{listings} % 代码块
+\usepackage{xcolor} % 颜色支持
+\usepackage{amsmath} % 数学公式
+\usepackage{hyperref} % 超链接
+\usepackage{tikz} % 绘图
+
+% 页面布局设置
+\geometry{left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm}
+
+% 自定义颜色
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+% 代码块样式
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    frame=single
+}
+\lstset{style=mystyle}
+
+% 章节标题格式
+\titleformat{\chapter}[block]
+{\centering\Huge\bfseries}{\thechapter}{1em}{}
+\titlespacing*{\chapter}{0pt}{-30pt}{20pt}
+
+% 页眉页脚设置
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[RE]{\leftmark}
+\fancyhead[LO]{\rightmark}
+\fancyhead[LE,RO]{\includegraphics[height=0.8cm]{figures/logo.png}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% 封面设计
+\newcommand{\makecover}{
+    \thispagestyle{empty}
+    \begin{center}
+        \vspace*{2cm}
+        \includegraphics[width=0.3\textwidth]{figures/logo.png}
+        \vskip 2cm
+        
+        {\Huge \textbf{FPGA课程设计报告}}
+        \vskip 1.5cm
+        
+        {\Large \textbf{设计题目：}}\\
+        \vskip 0.5cm
+        {\LARGE \textbf{基于FPGA的数字系统设计}}
+        \vskip 2cm
+        
+        {\large 
+            \begin{tabular}{rl}
+                \textbf{姓\hspace{1em}名：} & 阿Q \\
+                \textbf{学\hspace{1em}号：} & 12345678 \\
+                \textbf{专\hspace{1em}业：} & 微电子 \\
+                \textbf{班\hspace{1em}级：} & 微电子X班 \\
+                \textbf{队\hspace{1em}名：} & 量子摸鱼科技 \\
+                \textbf{指导老师：} & 周贤中 \\
+            \end{tabular}
+        }
+        \vskip 2cm
+        
+        {\Large \textbf{集成电路学院}}\\
+        \vskip 0.5cm
+        {\Large \textbf{2025年6月}}
+    \end{center}
+    \cleardoublepage
+}
+
+\begin{document}
+
+% 封面
+\makecover
+
+% 前言部分
+\frontmatter
+% 摘要
+\chapter*{摘要}
+\addcontentsline{toc}{chapter}{摘要}
+本文介绍了基于FPGA的数字系统设计课程项目。利用Verilog HDL硬件描述语言，设计并实现了一个多功能数字时钟系统。系统包含时间显示、闹钟功能、秒表计时等模块，通过Xilinx Vivado工具进行综合与实现，并在Basys3开发板上完成验证。项目展示了FPGA在数字系统设计中的灵活性和高效性。
+
+\textbf{关键词：} FPGA; Verilog; 数字时钟; 数字系统设计
+
+% 目录
+\tableofcontents
+
+% 正文
+\mainmatter
+
+\include{body/chapter1}
+\include{body/chapter2}
+\include{body/chapter3}
+\include{body/chapter4}
+\include{body/chapter5}
+\include{body/chapter6}
+\include{body/chapter7}
+\include{body/chapter8}
+
+% % 第一章
+% \chapter{引言}
+% \section{项目背景}
+% 现场可编程门阵列（FPGA）因其高度灵活性和并行处理能力，已成为现代数字系统设计的核心平台。本课程设计旨在通过实际项目，掌握FPGA开发流程和数字系统设计方法。
+
+% \section{设计目标}
+% \begin{itemize}
+%     \item 实现多功能数字时钟系统
+%     \item 掌握Verilog HDL编程技巧
+%     \item 理解FPGA设计流程
+%     \item 完成硬件验证与调试
+% \end{itemize}
+
+% % 第二章
+% \chapter{系统设计}
+% \section{总体架构}
+% 系统采用模块化设计方法，主要包含以下模块：
+% % \begin{figure}[h]
+% %     \centering
+% %     \includegraphics[width=0.8\textwidth]{figures/block_diagram.png}
+% %     \caption{系统架构框图}
+% %     \label{fig:block}
+% % \end{figure}
+
+% \section{时钟模块}
+% 核心计时模块，实现时分秒计时功能：
+% \begin{lstlisting}[language=Verilog, caption=时钟模块核心代码]
+% module clock_module(
+%     input clk,         // 主时钟
+%     input reset,       // 复位信号
+%     output [5:0] hour, // 小时
+%     output [5:0] min,  // 分钟
+%     output [5:0] sec   // 秒
+% );
+% reg [5:0] hour_reg, min_reg, sec_reg;
+
+% always @(posedge clk or posedge reset) begin
+%     if (reset) begin
+%         hour_reg <= 0;
+%         min_reg <= 0;
+%         sec_reg <= 0;
+%     end else begin
+%         if (sec_reg == 59) begin
+%             sec_reg <= 0;
+%             if (min_reg == 59) begin
+%                 min_reg <= 0;
+%                 hour_reg <= (hour_reg == 23) ? 0 : hour_reg + 1;
+%             end else min_reg <= min_reg + 1;
+%         end else sec_reg <= sec_reg + 1;
+%     end
+% end
+
+% assign hour = hour_reg;
+% assign min = min_reg;
+% assign sec = sec_reg;
+% endmodule
+% \end{lstlisting}
+
+% % 第三章
+% \chapter{实现与测试}
+% \section{开发环境}
+% \begin{itemize}
+%     \item \textbf{硬件平台：} Basys3 FPGA开发板
+%     \item \textbf{开发工具：} Xilinx Vivado 2022.1
+%     \item \textbf{编程语言：} Verilog HDL
+% \end{itemize}
+
+% \section{测试结果}
+% 通过Modelsim进行功能仿真，并在开发板上进行硬件验证：
+% \begin{table}[h]
+%     \centering
+%     \caption{资源利用率报告}
+%     \label{tab:resource}
+%     \begin{tabular}{lccc}
+%         \toprule
+%         资源类型 & 使用量 & 总量 & 利用率 \\
+%         \midrule
+%         LUT & 1,203 & 33,280 & 3.6\% \\
+%         寄存器 & 845 & 66,560 & 1.2\% \\
+%         块RAM & 3 & 120 & 2.5\% \\
+%         \bottomrule
+%     \end{tabular}
+% \end{table}
+
+% % 第四章
+% \chapter{结论与展望}
+% \section{项目总结}
+% 本项目成功实现了基于FPGA的多功能数字时钟系统，验证了以下关键技术：
+% \begin{enumerate}
+%     \item 模块化的硬件设计方法
+%     \item 时序电路的设计与优化
+%     \item FPGA开发全流程实践
+% \end{enumerate}
+
+% \section{未来改进}
+% \begin{itemize}
+%     \item 添加温度显示功能
+%     \item 实现网络时间同步
+%     \item 优化电源管理模块
+% \end{itemize}
+
+% 参考文献
+\backmatter
+\chapter*{参考文献}
+\addcontentsline{toc}{chapter}{参考文献}
+\begin{thebibliography}{99}
+\bibitem{ref1} 王金明. 数字系统设计与Verilog HDL(第7版). 电子工业出版社, 2019.
+\bibitem{ref2} Xilinx. Basys3 FPGA Board Reference Manual, 2021.
+\bibitem{ref3} Chu, Pong P. FPGA Prototyping by Verilog Examples. Wiley, 2008.
+\end{thebibliography}
+
+% 附录
+\appendix
+\chapter{设计图纸}
+\section{电路原理图}
+完整电路原理图见附件。
+
+\chapter{代码清单}
+完整Verilog源代码见随附文件。
+
+\end{document}
