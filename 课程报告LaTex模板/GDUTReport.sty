@@ -1,0 +1,95 @@
+% Editor：KIALA9
+
+\ProvidesPackage{GDUTReport}
+
+% 基础宏包
+\RequirePackage[UTF8, scheme=plain]{ctex}
+\RequirePackage{array, longtable, adjustbox, graphicx, geometry}
+\RequirePackage{titlesec, fancyhdr, booktabs, listings, xcolor}
+\RequirePackage{amsmath, hyperref, tikz, setspace, fontspec, placeins, caption}
+
+% 页面布局设置
+\geometry{left=3.18cm, right=3.18cm, top=2.54cm, bottom=2.54cm}
+\setstretch{1.5} % 设置全局行距为1.5倍
+
+% 字体设置
+\setmainfont{Times New Roman} % 英文正文为Times New Roman
+
+% 自定义颜色
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\definecolor{integratedblue}{HTML}{193078}
+\definecolor{GDUTred}{HTML}{bb0b00}
+\definecolor{keywordcolor}{rgb}{0.8,0.1,0.5}
+
+% 可固定下划线长度
+\makeatletter
+\newcommand\dlmu[2][4cm]{\hskip1pt\underline{\hb@xt@ #1{\hss#2\hss}}\hskip3pt}
+\makeatother
+
+% 标题格式设置
+\captionsetup[table]{labelsep=space} % 表
+\captionsetup[figure]{labelsep=space} % 图
+
+% 代码块样式
+\lstset{
+    breaklines = true,                                   % 自动将长的代码行换行排版
+    extendedchars=false,                                 % 解决代码跨页时，章节标题，页眉等汉字不显示的问题
+    columns=fixed,
+    numbers=left,                                        % 在左侧显示行号
+    basicstyle=\zihao{-5}\ttfamily,
+    numberstyle=\small,
+    frame=none,                                          % 不显示背景边框
+    keywordstyle=\color[RGB]{40,40,255},                 % 设定关键字颜色
+    numberstyle=\footnotesize\color{darkgray},           % 设定行号格式
+    showstringspaces=false,                              % 不显示字符串中的空格
+    frame=shadowbox,                                     % 设置阴影
+    rulesepcolor=\color{red!20!green!20!blue!20},        % 阴影颜色
+    basewidth=0.6em,
+    tabsize=4,
+    commentstyle=\color{codegreen}, % 注释样式
+    stringstyle=\color{orange}, % 字符串样式
+    numberstyle=\color{gray}, % 设置数字颜色
+    showstringspaces=false, % 不显示字符串中的空格
+    extendedchars=true, % 支持扩展字符
+}
+
+% Verilog代码引用样式
+\lstdefinestyle{Verilog}
+{
+    language=Verilog,
+    title={\texttt{Verilog Example}},
+    keywords=[1]{module, endmodule, input, output,  reg, always, begin, end, if, else, case, casex, endcase, assign},
+    keywordstyle=[1]\color{blue}\bfseries,
+    keywords=[2]{and, or, nand, nor, xor, xnor, buf, wire, not},
+    keywordstyle=[2]\color{red},
+    keywords=[3]{function, endfunction},
+    keywordstyle=[3]\color{purple},
+    sensitive=true,
+    morecomment=[l][commentstyle]{//},
+    morecomment=[s]{/*}{*/}, % 块注释
+    commentstyle=\color{codegreen}, % 注释风格
+    morestring=[b]", % 字符串
+    morecomment=[l][commentstyle]{'},
+    morecomment=[l][commentstyle]{"},
+}
+
+% 页眉页脚设置
+\makeatletter
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[R]{\footnotesize \fangsong \leftmark}
+\fancyhead[L]{
+  \includegraphics[height=0.5cm]{figures/GDUT-horizontal.pdf}
+  \hskip 0.1cm % 图片与分隔线的水平间距
+  \raisebox{0.095cm}[0pt][0pt]{\large |}
+  \hskip 0.11cm % 分隔线与文字的水平间距
+  \raisebox{0.095cm}[0pt][0pt]{\footnotesize \@title}
+}
+\fancyfoot[C]{\thepage}
+\makeatother
+
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
