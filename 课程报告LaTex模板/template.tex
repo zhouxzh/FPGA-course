@@ -2,6 +2,9 @@
 % FPGA课程设计报告模板
 \documentclass[12pt, a4paper]{ctexart}
 \usepackage[UTF8, scheme=plain]{ctex} % 中文支持
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{adjustbox}
 \usepackage{graphicx} % 插入图片
 \usepackage{geometry} % 页面设置
 \usepackage{titlesec} % 标题格式
@@ -15,9 +18,12 @@
 \usepackage{setspace}
 \usepackage{fontspec}
 \usepackage{placeins}
+\usepackage{caption}
 \setstretch{1.5} % 设置全局行距为1.5倍
 \setmainfont{Times New Roman} % 英文正文为Times New Roman
 
+\captionsetup[table]{labelsep=space} % 表
+\captionsetup[figure]{labelsep=space} % 图
 %可固定下划线长度
 \makeatletter
 \newcommand\dlmu[2][4cm]{\hskip1pt\underline{\hb@xt@ #1{\hss#2\hss}}\hskip3pt}
@@ -32,6 +38,10 @@
 \definecolor{backcolour}{rgb}{0.95,0.95,0.92}
 \definecolor{integratedblue}{HTML}{193078}
 \definecolor{GDUTred}{HTML}{bb0b00}
+\definecolor{keywordcolor}{rgb}{0.8,0.1,0.5}
+\definecolor{webgreen}{rgb}{0,.5,0}
+\definecolor{bgcolor}{rgb}{0.92,0.92,0.92}
+\definecolor{darkgreen}{rgb}{0,0.5,0}
 
 % 代码块样式
 \lstset{
