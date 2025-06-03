@@ -5,15 +5,12 @@
 % 基础宏包
 \RequirePackage[UTF8, scheme=plain]{ctex}
 \RequirePackage{array, longtable, adjustbox, graphicx, geometry}
-\RequirePackage{titlesec, fancyhdr, booktabs, listings, xcolor}
+\RequirePackage{titlesec, fancyhdr, booktabs, listings, xcolor, tcolorbox}
 \RequirePackage{amsmath, hyperref, tikz, setspace, fontspec, placeins, caption}
 
 % 页面布局设置
-\geometry{left=3.18cm, right=3.18cm, top=2.54cm, bottom=2.54cm}
-\setstretch{1.5} % 设置全局行距为1.5倍
-
-% 字体设置
-\setmainfont{Times New Roman} % 英文正文为Times New Roman
+\usetikzlibrary{calc}
+\geometry{left=2.58cm, right=2.58cm, top=2.54cm, bottom=2.54cm}
 
 % 自定义颜色
 \definecolor{codegreen}{rgb}{0,0.6,0}
@@ -27,7 +24,71 @@
 % 可固定下划线长度
 \makeatletter
 \newcommand\dlmu[2][4cm]{\hskip1pt\underline{\hb@xt@ #1{\hss#2\hss}}\hskip3pt}
+\newcommand{\subtitle}[1]{\gdef\@subtitle{#1}}
+\newcommand{\name}[1]{\gdef\@name{#1}}
+\newcommand{\thenumber}[1]{\gdef\@thenumber{#1}}
+\newcommand{\major}[1]{\gdef\@major{#1}}
+\newcommand{\class}[1]{\gdef\@class{#1}}
+\newcommand{\team}[1]{\gdef\@team{#1}}
+\newcommand{\teacher}[1]{\gdef\@teacher{#1}}
+\newcommand{\makecover}{
+    \thispagestyle{empty}
+    \begin{tikzpicture}[remember picture, overlay]
+        % 设定行距
+        \linespread{1.5}\selectfont
+        % 顶部图片
+        \node[anchor=north] at ($(current page.north)+(0,-3.8cm)$) {
+            \includegraphics[width=\textwidth]{figures/GDUT.pdf}
+        };
+
+        % 主标题
+        \node[anchor=north, font=\zihao{-1}\bfseries] at ($(current page.north)+(0,-10.5cm)$) {
+            \@title
+        };
+
+        % 副标题
+        \node[anchor=north, font=\zihao{4}] at ($(current page.north)+(0,-12cm)$) {
+            《\underline{\textbf{\@subtitle}}》
+        };
+
+        % 个人信息表格
+        \node[anchor=north, align=left, font=\kaishu\zihao{4}] at ($(current page.north)+(0,-14cm)$) {
+            \begin{tabular}{r@{\hspace{0.5em}}l}
+                \textbf{姓\hspace{2em}名：} & \dlmu[7cm]{\@name} \\[0.5cm]
+                \textbf{学\hspace{2em}号：} & \dlmu[7cm]{\@thenumber} \\[0.5cm]
+                \textbf{专\hspace{2em}业：} & \dlmu[7cm]{\@major} \\[0.5cm]
+                \textbf{班\hspace{2em}级：} & \dlmu[7cm]{\@class} \\[0.5cm]
+                \textbf{队\hspace{2em}名：} & \dlmu[7cm]{\@team} \\[0.5cm]
+                \textbf{指导老师：} & \dlmu[7cm]{\@teacher}
+            \end{tabular}
+        };
+
+        % 底部图片
+        \node[anchor=north] at ($(current page.north)+(0,-24cm)$) {
+            \includegraphics[height=1.2cm]{figures/GDUT-integrated-horizontal.pdf}
+        };
+
+        % 日期
+        \node[anchor=north, font=\zihao{4}\kaishu] at ($(current page.north)+(0,-26cm)$) {
+            \today
+        };
+    \end{tikzpicture}
+    \clearpage
+}
 \makeatother
+
+\newcommand{\tbox}[1]{
+\begin{center}
+\begin{tcolorbox}[colback=gray!10, %gray background
+                  colframe=black, % black frame colour
+                  width=8cm, % Use 8cm total width,
+                  arc=1mm, auto outer arc,
+                  boxrule=0.5pt,
+                 ]
+{#1}
+\end{tcolorbox}
+\end{center}
+}
 
 % 标题格式设置
 \captionsetup[table]{labelsep=space} % 表

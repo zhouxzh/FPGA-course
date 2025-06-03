@@ -1,57 +1,44 @@
 % !TeX program = xelatex
 % FPGA课程设计报告模板
-\documentclass[12pt, a4paper]{ctexart}
 
+\documentclass[12pt, a4paper]{ctexart}
 \usepackage{GDUTReport}
 
-% 封面设计
-\makeatletter
-\newcommand{\makecover}{
-    \thispagestyle{empty}
-    \begin{center}
-        \vspace*{1cm}
-        \includegraphics[width=0.9\textwidth]{figures/GDUT.pdf}
-        \vskip 3.5cm
-        
-        \title{FPGA课程设计报告} % 定义标题
-        {\Huge \textbf{\@title}}
-        \vskip 1.0cm
-        
-        % {\normalsize \text{设计题目：}}\\
-        % \vskip 0.5cm
-        {\large 《\underline{\textbf{基于FPGA的数字系统设计}}》}
-        \vskip 2cm
-        
-        {\kaishu \large 
-        \textbf{姓\hspace{2em}名：}\dlmu[7cm]{阿Q} \\
-        \vspace{0.2cm}
-        \textbf{学\hspace{2em}号：}\dlmu[7cm]{12345678} \\
-        \vspace{0.2cm}
-        \textbf{专\hspace{2em}业：}\dlmu[7cm]{微电子科学与工程} \\
-        \vspace{0.2cm}
-        \textbf{班\hspace{2em}级：}\dlmu[7cm]{微电子X班} \\
-        \vspace{0.2cm}
-        \textbf{队\hspace{2em}名：}\dlmu[7cm]{量子摸鱼科技} \\
-        \vspace{0.2cm}
-        \textbf{指导老师：}\dlmu[7cm]{周贤中} \\
-        }
-        \vskip 2cm        
-        {\includegraphics[height=1.2cm]{figures/GDUT-integrated-horizontal.pdf}}\\
-        \vskip 0.5cm
-        {\large \kaishu \today}
-        % {\large \kaishu 2025年6月}
-    \end{center}
-    % \cleardoublepage
+% 页面布局设置
+\setstretch{1.5} % 设置全局行距为1.5倍
+
+% 字体设置
+\setmainfont{Times New Roman} % 英文正文为Times New Roman
+
+% 封面内容
+{
+    % 课程名称
+    \title{FPGA课程设计报告}
+    % 报告标题
+    \subtitle{基于FPGA的数字系统设计}
+    % 姓名
+    \name{阿Q}
+    % 学号
+    \thenumber{12345678}
+    % 专业
+    \major{微电子科学与工程}
+    % 班级
+    \class{微电子X班}
+    % 队名
+    \team{量子摸鱼科技}
+    % 指导老师
+    \teacher{周贤中}
 }
-\makeatother
 
 \begin{document}
 
 % 封面
 \pagenumbering{gobble}
 \makecover
+
 % 前言部分
 % \frontmatter
+
 % 摘要
 \newpage
 \begin{abstract}
@@ -63,9 +50,11 @@
 \par
 \textbf{关键词：} FPGA; Verilog; 数字时钟; 数字系统设计
 \end{abstract}
+
 % 目录
 \tableofcontents
 \clearpage
+
 % 正文
 \pagenumbering{arabic}
 \setcounter{page}{1} % 让页码从正文开始编号
@@ -201,6 +190,5 @@
 \bibitem{ref2} Xilinx. Basys3 FPGA Board Reference Manual, 2021.
 \bibitem{ref3} Chu, Pong P. FPGA Prototyping by Verilog Examples. Wiley, 2008.
 \end{thebibliography}
-
 
 \end{document}
