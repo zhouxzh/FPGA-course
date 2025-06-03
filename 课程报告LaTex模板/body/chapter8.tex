@@ -1,12 +1,23 @@
 % !Mode:: "TeX:UTF-8"
 
-\chapter{附录}
+\section{附录}
 
-\section{完整代码附录}
+\subsection{完整代码附录}
 注：个人代码贡献标注于 6.1 编码工作
-\begin{lstlisting}
-    code
-\end{lstlisting}
+  \begin{lstlisting}[style=verilog, title=\texttt{示例}, basicstyle=\zihao{-4}\ttfamily]
+		module FS_P(A,B,Ci,D,Co);
+		output D;
+		output Co;
+		input A;
+		input B;
+		input Ci;
+	
+		assign D=A^B^Ci;
+		assign Co=~A&B|~A&Ci|B&Ci;
+
+		endmodule	
+	\end{lstlisting}
+	% \newpage
 \section{参考资料、文献}
 \begin{lstlisting}
     text

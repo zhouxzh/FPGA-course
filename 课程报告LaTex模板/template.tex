@@ -1,6 +1,6 @@
 % !TeX program = xelatex
 % FPGA课程设计报告模板
-\documentclass[12pt, a4paper]{book}
+\documentclass[12pt, a4paper]{ctexart}
 \usepackage[UTF8, scheme=plain]{ctex} % 中文支持
 \usepackage{graphicx} % 插入图片
 \usepackage{geometry} % 页面设置
@@ -12,107 +12,158 @@
 \usepackage{amsmath} % 数学公式
 \usepackage{hyperref} % 超链接
 \usepackage{tikz} % 绘图
+\usepackage{setspace}
+\usepackage{fontspec}
+\usepackage{placeins}
+\setstretch{1.5} % 设置全局行距为1.5倍
+\setmainfont{Times New Roman} % 英文正文为Times New Roman
 
+%可固定下划线长度
+\makeatletter
+\newcommand\dlmu[2][4cm]{\hskip1pt\underline{\hb@xt@ #1{\hss#2\hss}}\hskip3pt}
+\makeatother
 % 页面布局设置
-\geometry{left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm}
+\geometry{left=3.18cm, right=3.18cm, top=2.54cm, bottom=2.54cm}
 
 % 自定义颜色
 \definecolor{codegreen}{rgb}{0,0.6,0}
 \definecolor{codegray}{rgb}{0.5,0.5,0.5}
 \definecolor{codepurple}{rgb}{0.58,0,0.82}
 \definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\definecolor{integratedblue}{HTML}{193078}
+\definecolor{GDUTred}{HTML}{bb0b00}
 
 % 代码块样式
-\lstdefinestyle{mystyle}{
-    backgroundcolor=\color{backcolour},   
-    commentstyle=\color{codegreen},
-    keywordstyle=\color{magenta},
-    numberstyle=\tiny\color{codegray},
-    stringstyle=\color{codepurple},
-    basicstyle=\ttfamily\footnotesize,
-    breakatwhitespace=false,         
-    breaklines=true,                 
-    captionpos=b,                    
-    keepspaces=true,                 
-    numbers=left,                    
-    numbersep=5pt,                  
-    showspaces=false,                
-    showstringspaces=false,
-    showtabs=false,                  
-    tabsize=2,
-    frame=single
+\lstset{
+    breaklines = true,                                   % 自动将长的代码行换行排版
+    extendedchars=false,                                 % 解决代码跨页时，章节标题，页眉等汉字不显示的问题
+    columns=fixed,       
+    numbers=left,                                        % 在左侧显示行号
+    basicstyle=\zihao{-5}\ttfamily,
+    numberstyle=\small,
+    frame=none,                                          % 不显示背景边框
+    % backgroundcolor=\color[RGB]{245,245,244},            % 设定背景颜色
+    keywordstyle=\color[RGB]{40,40,255},                 % 设定关键字颜色
+    numberstyle=\footnotesize\color{darkgray},           % 设定行号格式
+    showstringspaces=false,                              % 不显示字符串中的空格
+    % frame=leftline,topline,rightline, bottomline         %分别对应只在左侧，上方，右侧，下方有竖线
+    frame=shadowbox,                                     % 设置阴影
+    rulesepcolor=\color{red!20!green!20!blue!20},        % 阴影颜色
+    basewidth=0.6em,
+    tabsize=4,
+    commentstyle=\color{darkgreen}, % 注释样式
+	  stringstyle=\color{orange}, % 字符串样式
+	  numberstyle=\color{gray}, % 设置数字颜色
+    showstringspaces=false, % 不显示字符串中的空格
+	  extendedchars=true, % 支持扩展字符
 }
-\lstset{style=mystyle}
+
+%Verilog代码引用样式
+\lstdefinestyle{Verilog}
+{
+	language=Verilog,
+	title={\texttt{Verilog Example}},
+	keywords=[1]{module, endmodule, input, output,  reg, always, begin, end, if, else, case, casex, endcase, assign},
+	keywordstyle=[1]\color{blue}\bfseries,
+	keywords=[2]{and, or, nand, nor, xor, xnor, buf,wire, not},
+	keywordstyle=[2]\color{red},
+	keywords=[3]{function, endfunction},
+	keywordstyle=[3]\color{purple},
+	sensitive=true,
+	morecomment=[l][commentstyle]{//},
+	morecomment=[s]{/*}{*/}, % 块注释
+	commentstyle=\color{darkgreen}, % 注释风格
+	morestring=[b]", % 字符串
+	morecomment=[l][commentstyle]{'},
+	morecomment=[l][commentstyle]{"},
+	% morestring=[b]' ,% 字符
+	% morecomment=[2][commentstyle]{$},
+	% commentstyle=\color{green},
+}
 
 % 章节标题格式
-\titleformat{\chapter}[block]
-{\centering\Huge\bfseries}{\thechapter}{1em}{}
-\titlespacing*{\chapter}{0pt}{-30pt}{20pt}
+% \titleformat{\chapter}[block]
+% {\centering\Huge\bfseries}{\thechapter}{1em}{}
+% \titlespacing*{\chapter}{0pt}{-30pt}{20pt}
 
 % 页眉页脚设置
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[RE]{\leftmark}
-\fancyhead[LO]{\rightmark}
-\fancyhead[LE,RO]{\includegraphics[height=0.8cm]{figures/logo.png}}
+\fancyhead[R]{\footnotesize \fangsong \leftmark}
+% \fancyhead[RO]{\small \rightmark}
+% \fancyhead[C]{\hspace{0.5em}\text{FPGA课程设计}}
+\fancyhead[L]{
+  \includegraphics[height=0.5cm]{figures/GDUT-horizontal.pdf}
+  \hskip 0.1cm % 图片与分隔线的水平间距
+  \raisebox{0.095cm}[0pt][0pt]{\large |}   
+  \hskip 0.11cm % 分隔线与文字的水平间距
+  \raisebox{0.095cm}[0pt][0pt]{\footnotesize FPGA课程设计} 
+}
 \fancyfoot[C]{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 \renewcommand{\footrulewidth}{0pt}
-
 % 封面设计
 \newcommand{\makecover}{
     \thispagestyle{empty}
     \begin{center}
-        \vspace*{2cm}
-        \includegraphics[width=0.3\textwidth]{figures/logo.png}
-        \vskip 2cm
+        \vspace*{1cm}
+        \includegraphics[width=0.9\textwidth]{figures/GDUT.pdf}
+        \vskip 3.5cm
         
         {\Huge \textbf{FPGA课程设计报告}}
-        \vskip 1.5cm
+        \vskip 1.0cm
         
-        {\Large \textbf{设计题目：}}\\
-        \vskip 0.5cm
-        {\LARGE \textbf{基于FPGA的数字系统设计}}
+        % {\normalsize \text{设计题目：}}\\
+        % \vskip 0.5cm
+        {\large 《\underline{\textbf{基于FPGA的数字系统设计}}》}
         \vskip 2cm
         
-        {\large 
-            \begin{tabular}{rl}
-                \textbf{姓\hspace{1em}名：} & 阿Q \\
-                \textbf{学\hspace{1em}号：} & 12345678 \\
-                \textbf{专\hspace{1em}业：} & 微电子 \\
-                \textbf{班\hspace{1em}级：} & 微电子X班 \\
-                \textbf{队\hspace{1em}名：} & 量子摸鱼科技 \\
-                \textbf{指导老师：} & 周贤中 \\
-            \end{tabular}
+        {\kaishu \large 
+        \textbf{姓\hspace{2em}名：}\dlmu[7cm]{阿Q} \\
+        \vspace{0.2cm}
+        \textbf{学\hspace{2em}号：}\dlmu[7cm]{12345678} \\
+        \vspace{0.2cm}
+        \textbf{专\hspace{2em}业：}\dlmu[7cm]{微电子科学与工程} \\
+        \vspace{0.2cm}
+        \textbf{班\hspace{2em}级：}\dlmu[7cm]{微电子X班} \\
+  \vspace{0.2cm}
+        \textbf{队\hspace{2em}名：}\dlmu[7cm]{量子摸鱼科技} \\
+        \vspace{0.2cm}
+        \textbf{指导老师：}\dlmu[7cm]{周贤中} \\
         }
-        \vskip 2cm
-        
-        {\Large \textbf{集成电路学院}}\\
+        \vskip 2cm        
+        {\includegraphics[height=1.2cm]{figures/GDUT-integrated-horizontal.pdf}}\\
         \vskip 0.5cm
-        {\Large \textbf{2025年6月}}
+        {\large \kaishu \today}
+        % {\large \kaishu 2025年6月}
     \end{center}
-    \cleardoublepage
+    % \cleardoublepage
 }
 
 \begin{document}
 
 % 封面
+\pagenumbering{gobble}
 \makecover
-
 % 前言部分
-\frontmatter
+% \frontmatter
 % 摘要
-\chapter*{摘要}
-\addcontentsline{toc}{chapter}{摘要}
-本文介绍了基于FPGA的数字系统设计课程项目。利用Verilog HDL硬件描述语言，设计并实现了一个多功能数字时钟系统。系统包含时间显示、闹钟功能、秒表计时等模块，通过Xilinx Vivado工具进行综合与实现，并在Basys3开发板上完成验证。项目展示了FPGA在数字系统设计中的灵活性和高效性。
-
+\newpage
+\begin{abstract}
+本文介绍了基于FPGA的数字系统设计课程项目。
+利用Verilog HDL硬件描述语言，设计并实现了一个多功能数字时钟系统。
+系统包含时间显示、闹钟功能、秒表计时等模块，
+通过Xilinx Vivado工具进行综合与实现，并在Basys3开发板上完成验证。
+项目展示了FPGA在数字系统设计中的灵活性和高效性。
 \textbf{关键词：} FPGA; Verilog; 数字时钟; 数字系统设计
-
+\end{abstract}
 % 目录
 \tableofcontents
-
+\clearpage
 % 正文
-\mainmatter
+\pagenumbering{arabic}
+\setcounter{page}{1} % 让页码从正文开始编号
+% \mainmatter
 
 \include{body/chapter1}
 \include{body/chapter2}
@@ -225,22 +276,25 @@
 % \end{itemize}
 
 % 参考文献
-\backmatter
-\chapter*{参考文献}
-\addcontentsline{toc}{chapter}{参考文献}
+% \backmatter
+% \section*{\centering 参考文献}
+% \addcontentsline{toc}{chapter}{参考文献}
+
+% 附录
+\appendix
+\section{\centering 设计图纸}
+\subsection*{电路原理图}
+完整电路原理图见附件。
+
+\section{\centering 代码清单}
+完整Verilog源代码见随附文件。
+
+\addcontentsline{toc}{section}{参考文献}
 \begin{thebibliography}{99}
 \bibitem{ref1} 王金明. 数字系统设计与Verilog HDL(第7版). 电子工业出版社, 2019.
 \bibitem{ref2} Xilinx. Basys3 FPGA Board Reference Manual, 2021.
 \bibitem{ref3} Chu, Pong P. FPGA Prototyping by Verilog Examples. Wiley, 2008.
 \end{thebibliography}
 
-% 附录
-\appendix
-\chapter{设计图纸}
-\section{电路原理图}
-完整电路原理图见附件。
-
-\chapter{代码清单}
-完整Verilog源代码见随附文件。
 
 \end{document}
