@@ -7,6 +7,7 @@
 \RequirePackage{array, longtable, adjustbox, graphicx, geometry}
 \RequirePackage{titlesec, fancyhdr, booktabs, listings, xcolor, tcolorbox}
 \RequirePackage{amsmath, hyperref, tikz, setspace, fontspec, placeins, caption}
+\RequirePackage{subfigure, textcomp}    % 小图、货币符号
 
 % 页面布局设置
 \usetikzlibrary{calc}
@@ -89,6 +90,8 @@
 \end{tcolorbox}
 \end{center}
 }
+
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}   % 表格样式支持
 
 % 标题格式设置
 \captionsetup[table]{labelsep=space} % 表
