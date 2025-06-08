@@ -18,8 +18,8 @@ assign led[1] = rst;
 // =====================================================
 // parameter N = 32'd24_414;  // 50,000,000 / 2,048 ≈ 24,414
 // parameter N = 32'd31_250; //50,000,000 / 16 / 10 = 32,250
-parameter N = 32'd104_107; //30FPS
-// parameter N = 8;
+parameter N = 32'd6_510; //60FPS
+// parameter N = 8; //仿真的时候，选用N=8加快仿真速度
 reg [31:0] clkgen_counter;      // 分频计数器
 reg clk_out_reg;            // 输出寄存器
 wire clk_2048;
@@ -87,14 +87,6 @@ wire sclk_rising = (sync_reg[1] && !sclk_delayed);
 
 // 初始化存储器
 integer i;
-initial begin
-    for (i = 0; i < 64; i = i + 1) begin
-        red[i] = 4'h0;
-        green[i] = 4'h0;
-        blue[i] = 4'h0;
-    end
-end
-
 // 主状态机
 always @(posedge clk or negedge rst) begin
     if (!rst) begin
@@ -104,6 +96,11 @@ always @(posedge clk or negedge rst) begin
         spi_data_valid <= 0;
         spi_addr_reg <= 6'b0;
         spi_rgb_reg <= 24'b0;
+        for (i = 0; i < 64; i = i + 1) begin
+            red[i] <= 4'h0;
+            green[i] <= 4'h0;
+            blue[i] <= 4'h0;
+        end
     end else begin
         case (spi_state)
             SPI_IDLE: begin
@@ -152,31 +149,12 @@ end
 
 assign led[0] = spi_data_valid;
 
-// =====================================================
-// LED驱动逻辑
-// =====================================================
-wire [31:0] brightness_r [0:7]; // R亮度 [行][32位] (4位 x 8列)
-wire [31:0] brightness_g [0:7]; // G亮度 [行][32位]
-wire [31:0] brightness_b [0:7]; // B亮度 [行][32位]
-
-genvar row, col;
-generate
-    for (row = 0; row < 8; row = row + 1) begin : row_gen
-        for (col = 0; col < 8; col = col + 1) begin : col_gen
-            // 将4位颜色值扩展为8位 (左移4位)
-            assign brightness_r[row][col*4 +: 4] = red[row*8+col];
-            assign brightness_g[row][col*4 +: 4] = green[row*8+col];
-            assign brightness_b[row][col*4 +: 4] = blue[row*8+col];
-        end
-    end
-endgenerate
-
 // LED驱动内部信号
 reg [3:0] driver_pwm_counter;    // PWM计数器 (0-15)
 reg [2:0] driver_row_counter;    // 行计数器 (0-7)
-reg [31:0] current_row_r;        // 当前行R亮度数据 (32位)
-reg [31:0] current_row_g;        // 当前行G亮度数据
-reg [31:0] current_row_b;        // 当前行B亮度数据
+reg [3:0] current_row_r[7:0];        // 当前行R亮度数据 (32位)
+reg [3:0] current_row_g[7:0];        // 当前行G亮度数据
+reg [3:0] current_row_b[7:0];        // 当前行B亮度数据
 reg [7:0] driver_col_r;          // R列输出
 reg [7:0] driver_col_g;          // G列输出
 reg [7:0] driver_col_b;          // B列输出
@@ -190,32 +168,94 @@ always @(posedge clk_2048 or negedge rst) begin
 end
 
 // 行计数器
-always @(posedge clk_2048 or negedge rst) begin
-    if (!rst) 
-        driver_row_counter <= 3'd0;
-    else if (driver_pwm_counter == 4'hF) 
-        driver_row_counter <= driver_row_counter + 1;
-end
-
-// 行选择译码器 (低有效)
-assign led_row = 8'hFF;
+// 行选择译码器 (高有效)
+reg [7:0] current_row;
 
 // 亮度数据锁存 (行切换时更新)
+integer col;
 always @(posedge clk_2048 or negedge rst) begin
     if (!rst) begin
-        current_row_r <= 32'h0;
-        current_row_g <= 32'h0;
-        current_row_b <= 32'h0;
+        for (col = 0; col < 8; col = col + 1) begin
+            current_row_r[col] <= 0;  
+            current_row_r[col] <= 0;
+            current_row_r[col] <= 0;
+        end
+        current_row <= 8'h00;
+        driver_row_counter <= 3'd0;
     end
     else if (driver_pwm_counter == 4'hF) begin
-        current_row_r <= brightness_r[driver_row_counter];
-        current_row_g <= brightness_g[driver_row_counter];
-        current_row_b <= brightness_b[driver_row_counter];
+        current_row <= 8'h01 << driver_row_counter;
+        driver_row_counter <= driver_row_counter + 1;
+        case(driver_row_counter)
+        0: begin
+            for (col = 0; col < 8; col = col + 1) begin
+                current_row_r[col] <= red[col];  
+                current_row_g[col] <= green[col];
+                current_row_b[col] <= blue[col];
+            end
+        end
+        1: begin
+            for (col = 0; col < 8; col = col + 1) begin
+                current_row_r[col] <= red[col+8];  
+                current_row_g[col] <= green[col+8];
+                current_row_b[col] <= blue[col+8];
+            end
+        end
+        2: begin
+            for (col = 0; col < 8; col = col + 1) begin
+                current_row_r[col] <= red[col+16];  
+                current_row_g[col] <= green[col+16];
+                current_row_b[col] <= blue[col+16];
+            end
+        end
+        3: begin
+            for (col = 0; col < 8; col = col + 1) begin
+                current_row_r[col] <= red[col+24];  
+                current_row_g[col] <= green[col+24];
+                current_row_b[col] <= blue[col+24];
+            end
+        end
+        4: begin
+            for (col = 0; col < 8; col = col + 1) begin
+                current_row_r[col] <= red[col+32];  
+                current_row_g[col] <= green[col+32];
+                current_row_b[col] <= blue[col+32];
+            end
+        end
+        5: begin
+            for (col = 0; col < 8; col = col + 1) begin
+                current_row_r[col] <= red[col+40];  
+                current_row_g[col] <= green[col+40];
+                current_row_b[col] <= blue[col+40];
+            end
+        end
+        6: begin
+            for (col = 0; col < 8; col = col + 1) begin
+                current_row_r[col] <= red[col+48];  
+                current_row_g[col] <= green[col+48];
+                current_row_b[col] <= blue[col+48];
+            end
+        end
+        7: begin
+            for (col = 0; col < 8; col = col + 1) begin
+                current_row_r[col] <= red[col+56];  
+                current_row_g[col] <= green[col+56];
+                current_row_b[col] <= blue[col+56];
+            end
+        end
+        default: begin
+            for (col = 0; col < 8; col = col + 1) begin
+                current_row_r[col] <= 0;  
+                current_row_g[col] <= 0;
+                current_row_b[col] <= 0;
+            end
+        end
+        endcase
     end
 end
 
 // PWM输出生成 (修改为4位比较)
-// integer driver_col;
+integer driver_col;
 always @(posedge clk_2048 or negedge rst) begin
     if (!rst) begin
         driver_col_r <= 8'hFF;
@@ -223,15 +263,13 @@ always @(posedge clk_2048 or negedge rst) begin
         driver_col_b <= 8'hFF;
     end
     else begin
-        // for (driver_col = 0; driver_col < 8; driver_col = driver_col + 1) begin
+        for (driver_col = 0; driver_col < 8; driver_col = driver_col + 1) begin
             // 使用PWM计数器的高4位进行比较
             // 列比较 (低有效: 当颜色值 > PWM)
-            driver_col_r[0] <= (red[0] > driver_pwm_counter) ? 1'b0 : 1'b1;
-            
-            driver_col_g[0] <= (green[0] > driver_pwm_counter) ? 1'b0 : 1'b1;
-            
-            driver_col_b[0] <= (blue[0] > driver_pwm_counter) ? 1'b0 : 1'b1;
-        // end
+            driver_col_r[driver_col] <= (current_row_r[driver_col] > driver_pwm_counter) ? 1'b0 : 1'b1;  
+            driver_col_g[driver_col] <= (current_row_g[driver_col] > driver_pwm_counter) ? 1'b0 : 1'b1;
+            driver_col_b[driver_col] <= (current_row_b[driver_col] > driver_pwm_counter) ? 1'b0 : 1'b1;
+        end
     end
 end
 
@@ -239,5 +277,6 @@ end
 assign led_col_r = driver_col_r;
 assign led_col_g = driver_col_g;
 assign led_col_b = driver_col_b;
+assign led_row = current_row;
 
 endmodule
