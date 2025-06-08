@@ -18,7 +18,7 @@ assign led[1] = rst;
 // =====================================================
 // parameter N = 32'd24_414;  // 50,000,000 / 2,048 ≈ 24,414
 // parameter N = 32'd31_250; //50,000,000 / 16 / 10 = 32,250
-parameter N = 32'd6_510; //60FPS
+parameter N = 32'd3_000; //60FPS
 // parameter N = 8; //仿真的时候，选用N=8加快仿真速度
 reg [31:0] clkgen_counter;      // 分频计数器
 reg clk_out_reg;            // 输出寄存器
