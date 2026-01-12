@@ -43,7 +43,7 @@
    - Testbench拓扑结构
    - Sequence/Driver/Monitor组件
 2. 典型验证场景
-   ```systemverilog
+   ```verilog
    class axi_seq extends uvm_sequence;
      virtual task body();
        axi_transaction tx = axi_transaction::type_id::create("tx");

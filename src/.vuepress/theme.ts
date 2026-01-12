@@ -4,16 +4,16 @@ import navbar from "./navbar.js";
 import sidebar from "./sidebar.js";
 
 export default hopeTheme({
-  hostname: "https://vuepress-theme-hope-docs-demo.netlify.app",
+  hostname: "https://zhouxzh.github.io/FPGA-course/#main-content",
 
   author: {
-    name: "Mr.Hope",
+    name: "Dr. Xianzhong Zhou",
     url: "https://mister-hope.com",
   },
 
   logo: "logo.png",
 
-  repo: "vuepress-theme-hope/vuepress-theme-hope",
+  repo: "zhouxzh/FPGA-course",
 
   docsDir: "src",
 
@@ -104,7 +104,7 @@ export default hopeTheme({
     // flowchart: true,
 
     // 在启用之前安装 mermaid
-    // mermaid: true,
+    mermaid: true,
 
     // playground: {
     //   presets: ["ts", "vue"],
