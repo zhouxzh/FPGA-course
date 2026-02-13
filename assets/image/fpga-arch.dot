@@ -1,0 +1,48 @@
+digraph FPGA_Arch {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Arial"];
+    edge [color="#606060", arrowsize=0.8];
+
+    subgraph cluster_processing {
+        label="处理单元\n(32个可编程DSP)";
+        labelloc=b;
+        style=filled;
+        fillcolor="#e8f5e9";
+        
+        dsp1 [label="DSP Slice #1"];
+        dsp2 [label="DSP Slice #2"];
+        dsp3 [label="DSP Slice #3"];
+        dsp32 [label="DSP Slice #32"];
+        {rank=same; dsp1 -> dsp2 -> dsp3 [style=invis]}
+        {rank=same; dsp3 -> dsp32 [style=invis, label="..."]}
+    }
+
+    subgraph cluster_memory {
+        label="存储系统";
+        labelloc=b;
+        style=filled;
+        fillcolor="#e3f2fd";
+        
+        ddr4 [label="8GB DDR4\n64-bit总线"];
+        qspi [label="256MB QSPI Flash\nX4 IO模式"];
+    }
+
+    subgraph cluster_interface {
+        label="接口标准";
+        labelloc=b;
+        style=filled;
+        fillcolor="#fce4ec";
+        
+        pcie [label="PCIe 3.0 x8\n8GT/s"];
+        hdmi [label="HDMI 2.1\n48Gbps"];
+        usb [label="USB 3.2 Gen2x1\n10Gbps"];
+    }
+
+    // 连接关系
+    dsp1 -> ddr4 [label="AXI4总线"];
+    ddr4 -> dsp32 [dir=both];
+    qspi -> dsp1 [label="SPI控制"];
+    pcie -> ddr4 [label="DMA通道"];
+    hdmi -> dsp2 [label="视频流水线"];
+    usb -> {dsp1 dsp2} [label="数据接口"];
+}
