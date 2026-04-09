@@ -14,59 +14,62 @@
 
 为避免在各章末尾重复列出参考文献，现将 chapter1-9 对应的延伸阅读与参考资料统一汇总在本 README 中，便于课程教学、备课和后续查阅。
 
-### 第1讲：FPGA 系统设计概述
+- 第1讲：FPGA 系统设计概述。建议查阅 FPGA 厂商器件手册、开发工具用户指南与典型应用白皮书，并结合数字集成电路设计流程入门材料、ASIC 前后端设计方法和 SoC 架构设计资料，建立对 FPGA 在数字系统设计链条中定位的整体认识。
 
-- FPGA 厂商器件手册、开发工具用户指南、典型应用白皮书。
-- 数字集成电路设计流程入门材料。
-- ASIC 前后端设计方法与 SoC 架构设计入门资料。
+- 第2讲：FPGA与CPLD架构基础。建议重点阅读典型 FPGA 与 CPLD 器件的数据手册和用户指南，关注逻辑资源、存储资源、时钟资源与配置方式，同时结合 LUT 映射、时序驱动布局布线和片上互连优化等延伸资料理解其架构特点。
 
-### 第2讲：FPGA与CPLD架构基础
+- 第3讲：开源 Verilog 仿真工具。建议结合 Icarus Verilog 使用文档、GTKWave 波形分析资料与 Verilator 官方示例开展学习，并可进一步扩展到 Cocotb、SystemC、覆盖率分析和自动化回归测试等验证方法。
 
-- 典型 FPGA 与 CPLD 器件数据手册、用户指南。
-- 重点查阅逻辑资源、存储资源、时钟资源与配置方式相关章节。
-- LUT 映射、时序驱动布局布线、片上互连优化等架构延伸资料。
+- 第4讲：开源 Verilog 综合工具。建议阅读 Yosys 官方手册与交互式综合示例，重点关注 RTLIL、中间表示转换、状态机提取和技术映射等内容，同时了解 Yosys 与 nextpnr 配合使用的开源 FPGA 实现流程。
 
-### 第3讲：开源 Verilog 仿真工具
+- 第5讲：FPGA数字接口设计。建议结合 UART、SPI、I²C 协议基础文档与实验案例学习接口设计，并进一步查阅具体器件数据手册中关于 SPI 模式配置、I²C 时序参数、LVDS 约束设置和 HDMI 视频时序的说明，强化板级实现与调试能力。
 
-- Icarus Verilog 相关使用文档与示例工程。
-- GTKWave 波形查看与时序分析资料。
-- Verilator 官方文档、示例工程，以及 Cocotb、SystemC、覆盖率分析、自动化回归测试相关入门资料。
+- 第6讲：系统级设计技术。建议阅读基于 IP 核的系统集成设计资料，并结合软核处理器外设访问、寄存器映射和系统联调案例，进一步了解片上总线协议、DMA、缓存一致性和软硬件协同设计等系统级方法。
 
-### 第4讲：开源 Verilog 综合工具
+- 第7讲：设计优化技术。建议查阅 FPGA 厂商关于时序约束、功耗分析和 CDC 设计规范的官方文档，并结合时序收敛、面积优化、功耗优化、流水线重构和关键路径分析等工程案例开展深入学习。
 
-- Yosys 官方手册与交互式综合示例。
-- RTLIL、中间表示转换、状态机提取、技术映射等相关章节资料。
-- Yosys 与 nextpnr 配合使用的开源 FPGA 流程资料。
+- 第8讲：FPGA 调试、测试与 SystemC 建模。建议阅读 FPGA 厂商在线调试工具文档，如 ILA、VIO 等，同时结合 SystemC 官方示例、模块与进程入门资料，以及 Verilator 与 SystemC 联合验证、仿真控制、波形跟踪和测试平台组织相关内容进行扩展。
 
-### 第5讲：FPGA数字接口设计
+- 第9讲：前沿技术专题。建议根据兴趣选择 HLS 与量化推理、PS-PL 协同与异构 SoC 平台开发，或开源 FPGA 工具链中的综合、布局布线与自动化流程等方向进行进一步阅读和跟进。
 
-- UART、SPI、I²C 接口协议基础文档与实验案例。
-- 具体器件数据手册中的 SPI 模式配置、I²C 时序参数、LVDS 约束设置、HDMI 视频时序表。
-- 面向板级实现的接口设计与调试资料。
+## 参考文献
 
-### 第6讲：系统级设计技术
+教材与基础资料：
 
-- 基于 IP 核的系统集成设计资料。
-- 软核处理器外设访问、寄存器映射与系统联调案例。
-- 片上总线协议、DMA 结构、缓存一致性、软硬件协同设计等系统级设计材料。
+1. Brown S, Vranesic Z. Fundamentals of Digital Logic with Verilog Design[M]. New York: McGraw-Hill.
+2. Palnitkar S. Verilog HDL: A Guide to Digital Design and Synthesis[M]. Upper Saddle River: Pearson.
+3. Chu P P. FPGA Prototyping by Verilog Examples[M]. Hoboken: Wiley.
+4. Wolf W. FPGA-Based System Design[M]. Upper Saddle River: Prentice Hall.
+5. Ciletti M D. Advanced Digital Design with the Verilog HDL[M]. Upper Saddle River: Pearson.
 
-### 第7讲：设计优化技术
+厂商工具与器件文档：
 
-- FPGA 厂商关于时序约束、功耗分析与 CDC 设计规范的官方文档。
-- 时序收敛、面积优化、功耗优化等工程实践资料。
-- 流水线重构、关键路径分析与约束编写相关案例。
+1. AMD Xilinx. Vivado Design Suite User Guide[Z]. 重点参考综合、约束、实现与调试相关文档。
+2. Intel. Quartus Prime User Guide[Z]. 重点参考设计输入、分析综合、时序约束与片上调试相关文档。
+3. Lattice Semiconductor. FPGA Design Documentation and Family Data Sheet[Z].
+4. AMD. Zynq SoC Platform User Guide[Z].
+5. Intel. SoC FPGA Documentation[Z].
+6. HDMI、LVDS、UART、SPI、I²C 等接口器件数据手册与应用笔记[Z]. 建议结合具体开发板和芯片型号查阅。
 
-### 第8讲：FPGA 调试、测试与 SystemC 建模
+开源工具链与验证资料：
 
-- FPGA 厂商在线调试工具文档，如 ILA、VIO 等。
-- SystemC 官方示例、模块/端口/进程入门资料。
-- Verilator 与 SystemC 联合验证示例，以及仿真控制、波形跟踪、测试平台组织相关资料。
+1. Wolf C, et al. Yosys Open SYnthesis Suite Documentation[Z].
+2. nextpnr Documentation and Project Materials[Z].
+3. Icarus Verilog Documentation[Z].
+4. GTKWave User's Guide[Z].
+5. Verilator User Guide[Z].
+6. Accellera Systems Initiative. SystemC 2.3.x Language Reference Manual[Z].
 
-### 第9讲：前沿技术专题
+协议与系统设计资料：
 
-- HLS 与量化推理相关入门资料。
-- PS-PL 协同、驱动控制与异构 SoC 平台开发资料。
-- 开源 FPGA 工具链在综合、布局布线与自动化流程方面的文档与项目资料。
+1. Arm. AMBA AXI and ACE Protocol Specification[Z].
+2. 软核处理器、片上总线、DMA、缓存一致性及软硬件协同设计相关技术手册与应用资料[Z].
+
+前沿专题拓展资料：
+
+1. AMD Xilinx. Vitis HLS User Guide[Z].
+2. Intel. HLS Compiler Documentation[Z].
+3. HLS、量化推理、异构 SoC 平台与开源 FPGA 自动化流程相关论文、白皮书与官方示例资料[Z].
 
 ## 使用建议
 

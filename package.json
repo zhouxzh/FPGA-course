@@ -11,6 +11,7 @@
     "docs:update-package": "pnpm dlx vp-update"
   },
   "devDependencies": {
+    "@mermaid-js/mermaid-cli": "^11.12.0",
     "@vuepress/bundler-vite": "2.0.0-rc.19",
     "katex": "^0.16.21",
     "mathjax-full": "^3.2.2",

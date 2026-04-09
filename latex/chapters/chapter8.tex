@@ -1,0 +1,779 @@
+\chapter{第8讲：FPGA 调试、测试与 SystemC
+建模}\label{ux7b2c8ux8bb2fpga-ux8c03ux8bd5ux6d4bux8bd5ux4e0e-systemc-ux5efaux6a21}
+
+前几讲已经围绕 FPGA
+设计流程、接口设计、系统级集成以及设计优化展开讨论。到这一阶段，读者通常已经能够完成一个具备一定复杂度的
+RTL
+设计，并能够通过仿真和综合获得初步结果。但在真实工程中，设计``能够综合通过''并不意味着它已经``能够稳定使用''。很多问题并不会在最初的功能仿真中暴露，而是会在上板联调、系统联机、跨模块协作或长时间运行后逐渐显现。因此，调试与测试并不是设计流程的附属环节，而是保证设计真正可用的关键部分。
+
+本章围绕 FPGA
+工程中的调试与测试技术展开讨论，重点介绍板级调试的基本思路、片上调试工具
+ILA 与 VIO 的典型用法、覆盖率驱动的验证方法、边界扫描的基本作用，以及
+SystemC
+在系统级建模与联合验证中的入门知识。通过本章学习，读者应能够建立从``功能验证''走向``工程验证''的基本认识，并理解为什么在复杂系统中需要同时结合
+RTL、板上观测和高层模型来定位问题。
+
+\section{学习目标}\label{ux5b66ux4e60ux76eeux6807}
+
+通过本章学习，读者应达到以下目标。首先，应能够理解 FPGA
+调试与测试在工程实践中的作用，认识仿真正确、综合通过和板上稳定运行之间的差异。其次，应能够掌握
+ILA 和 VIO
+的基本工作原理，理解它们分别适合观测什么问题、注入什么信号以及如何配合使用。再次，应能够初步理解覆盖率驱动验证的基本思想，知道代码覆盖率和功能覆盖率的区别，以及它们在测试充分性判断中的作用。然后，应能够了解
+JTAG
+和边界扫描在板级测试中的定位，理解其与在线逻辑调试之间的差异。最后，应能够建立对
+SystemC 的基础认识，理解模块、时间、进程与事件等核心概念，并能看懂
+Verilator 与 SystemC 联合验证的基本流程。
+
+\section{引例：为什么``仿真正确''后仍然可能需要长时间调试}\label{ux5f15ux4f8bux4e3aux4ec0ux4e48ux4effux771fux6b63ux786eux540eux4ecdux7136ux53efux80fdux9700ux8981ux957fux65f6ux95f4ux8c03ux8bd5}
+
+在 FPGA
+学习过程中，读者经常会遇到一种令人困惑的情况：设计在仿真中行为完全正确，综合和实现也都顺利完成，但下载到开发板后却没有预期现象，或者系统只能在某些条件下偶然工作。还有一些设计在简单测试下表现正常，但当数据流量增大、多个模块同时工作或时钟关系更复杂时，系统就会出现偶发错误。
+
+造成这类问题的原因往往并不神秘。它可能来自复位释放顺序不一致，可能来自跨时钟域信号处理不当，也可能来自板级接口连接、约束遗漏、输入激励不足或测试场景覆盖不全。换句话说，仿真只是观察设计的一种方式，而不是对系统行为的最终裁决。一个真正可用的
+FPGA
+设计，必须经得起``模型验证''\,``板上观察''\,``系统联调''和``边界条件测试''的共同检验。
+
+因此，本章讨论的重点不是简单罗列若干调试命令，而是帮助读者建立一套更完整的工程认识：发现问题时，应先判断问题发生在哪个层次，再选择合适的观测手段和验证模型。只有这样，调试才不会沦为盲目试错。
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{调试与测试的工程定位}\label{ux8c03ux8bd5ux4e0eux6d4bux8bd5ux7684ux5de5ux7a0bux5b9aux4f4d}
+
+在 FPGA
+工程中，调试与测试并不是同一个概念，但二者密切相关。调试更强调``发现并定位问题''，测试更强调``系统地验证设计是否满足预期要求''。前者通常从一个具体故障出发，后者则更关注验证范围是否充分、场景是否完整、结果是否可重复。
+
+从工程流程看，常见的验证与调试层次大致包括以下几个方面：
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{模块级功能仿真}：确认单个 RTL
+  模块在预期输入下是否产生正确输出；
+\item
+  \textbf{子系统级联调}：观察多个模块连通后，接口时序、握手关系和控制流程是否一致；
+\item
+  \textbf{板级在线调试}：借助 ILA、VIO
+  或板载接口直接观察真实硬件运行状态；
+\item
+  \textbf{系统级测试}：在更长时间、更大数据量或更复杂模式下验证系统稳定性与完整性。
+\end{itemize}
+
+需要特别注意的是，这几个层次并不是前后替代关系。模块级仿真通过，并不意味着可以跳过板级调试；板级现象正常，也不代表测试覆盖已经足够。真正成熟的工程流程，是让不同层次的验证彼此补充。
+
+\subsection{常见问题来源}\label{ux5e38ux89c1ux95eeux9898ux6765ux6e90}
+
+初学者在调试 FPGA
+系统时，往往容易把问题简单归结为``代码写错了''。事实上，板上问题的来源比纯语法错误复杂得多。常见来源包括：
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{时序问题}：关键路径过长、约束缺失、保持时间违例；
+\item
+  \textbf{跨时钟域问题}：单比特同步不足、多比特数据跨域不当；
+\item
+  \textbf{复位与初始化问题}：不同模块释放顺序不一致，或寄存器初值与仿真假设不同；
+\item
+  \textbf{接口问题}：握手协议不完整、有效信号持续时间不足、背压处理缺失；
+\item
+  \textbf{测试问题}：激励场景过于理想，未覆盖异常条件或边界状态；
+\item
+  \textbf{板级问题}：管脚分配错误、电平标准不一致、外设连接与约束不匹配。
+\end{itemize}
+
+理解这些问题来源的意义在于：调试工作首先是``分类定位''。若没有先判断问题属于哪一类，就很容易在错误方向上花费大量时间。
+
+\subsection{基本定位流程}\label{ux57faux672cux5b9aux4f4dux6d41ux7a0b}
+
+当系统出现异常时，更稳妥的处理方式通常不是立刻大改代码，而是按照由外到内、由现象到原因的顺序逐步缩小范围。一个常见流程如下：
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  先确认现象是否稳定可复现；
+\item
+  检查时钟、复位和约束等基础条件是否正确；
+\item
+  比较仿真输入与板级真实输入是否一致；
+\item
+  使用 ILA 观察关键控制与数据信号；
+\item
+  必要时借助更高层模型或软件驱动复现问题；
+\item
+  在确认根因后，再进行 RTL 或约束修改。
+\end{enumerate}
+
+这个流程背后的思想是：调试应建立在证据之上，而不是建立在猜测之上。工具越多，并不意味着调试越高效；真正关键的是能否有条理地组织观察。
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{片上调试工具：ILA 与
+VIO}\label{ux7247ux4e0aux8c03ux8bd5ux5de5ux5177ila-ux4e0e-vio}
+
+在现代 FPGA 工具链中，在线逻辑分析仪（Integrated Logic
+Analyzer，ILA）和虚拟输入输出（Virtual
+Input/Output，VIO）是最常用的两类板上调试工具。它们都工作在已实现的硬件设计之中，但用途并不相同。ILA
+主要用于``看见''内部信号随时间的变化，而 VIO
+更适合``主动施加''控制或激励。
+
+\subsection{ILA 的基本作用}\label{ila-ux7684ux57faux672cux4f5cux7528}
+
+ILA
+的核心价值在于，它能让设计者在真实硬件运行过程中捕获片上信号波形。与传统仿真不同，ILA
+观察到的是综合、布局布线之后真实实现的电路行为，因此对定位板上问题尤其有帮助。
+
+通常情况下，ILA 适合观察以下类型的问题：
+
+\begin{itemize}
+\tightlist
+\item
+  状态机是否进入预期状态；
+\item
+  握手信号是否按预期时序变化；
+\item
+  FIFO 是否发生溢出、空读或满写；
+\item
+  复位释放后关键寄存器是否初始化正确；
+\item
+  数据在多级流水线中是否出现错位或丢失。
+\end{itemize}
+
+一个典型的 ILA
+使用流程通常包括：在设计中插入待观测信号，重新综合实现，下载比特流后设置触发条件，并在系统运行时捕获波形。其核心不在于``探针接得越多越好''，而在于是否选中了真正有诊断价值的信号。
+
+\subsection{ILA
+触发与信号选择}\label{ila-ux89e6ux53d1ux4e0eux4fe1ux53f7ux9009ux62e9}
+
+初学者使用 ILA
+时常见的误区，是试图一次性把所有可能相关的信号全部接入。这样做既会增加资源开销，也会让后续分析变得混乱。更合理的原则是围绕``问题假设''选择探针。例如，若怀疑某个模块没有收到启动命令，那么就应优先观察启动信号、忙闲标志、状态机状态和关键计数器，而不是无差别地抓取大量数据总线。
+
+在触发条件设计方面，常见方法包括：
+
+\begin{itemize}
+\tightlist
+\item
+  以某个控制信号上升沿作为触发条件；
+\item
+  以错误标志位或超时标志置位作为触发条件；
+\item
+  以状态机进入异常状态作为触发条件；
+\item
+  结合前后触发窗口观察事件发生前后的上下文。
+\end{itemize}
+
+例如，在 Vivado 环境中，可以通过如下命令设置时钟并触发采集：
+
+\begin{lstlisting}[language=tcl]
+run_hw_ila [get_hw_ilas hw_ila_1]
+display_hw_ila_data [get_hw_ilas hw_ila_1]
+\end{lstlisting}
+
+教学中更重要的是理解：触发条件不是为了``把波形抓出来''，而是为了让波形与问题发生时刻对齐。只有这样，观测结果才真正有诊断意义。
+
+\subsection{VIO 的基本作用}\label{vio-ux7684ux57faux672cux4f5cux7528}
+
+与 ILA 的被动观测不同，VIO
+更强调交互式控制。它可以在板级运行过程中向设计内部写入某些控制信号，也可以实时读取少量状态信号。因此，VIO
+特别适合处理以下场景：
+
+\begin{itemize}
+\tightlist
+\item
+  手动产生复位、启动、暂停等控制信号；
+\item
+  给状态机提供简化输入，验证某个局部流程；
+\item
+  在没有完整外部激励链路时，临时构造测试条件；
+\item
+  与 ILA 配合，观察``输入改变后系统如何响应''。
+\end{itemize}
+
+例如，一个计数器或简单流水线模块可通过 VIO 控制
+\passthrough{\lstinline!en!} 或 \passthrough{\lstinline!clear!}
+信号，从而在板上直接观察功能是否与仿真一致。与直接修改顶层端口相比，VIO
+的优势在于无需依赖额外按键、拨码开关或外部电路。
+
+\subsection{ILA 与 VIO
+的协同使用}\label{ila-ux4e0e-vio-ux7684ux534fux540cux4f7fux7528}
+
+在实际工程中，ILA 和 VIO 往往不是二选一，而是配合使用。VIO
+用于主动改变系统状态，ILA
+用于捕获变化结果。二者组合后，可以形成一种较高效的板级实验闭环：
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  使用 VIO 施加启动、复位或模式选择信号；
+\item
+  使用 ILA 在关键事件发生时捕获内部波形；
+\item
+  根据观测结果判断是输入问题、状态机问题还是数据通路问题；
+\item
+  必要时调整触发条件或输入方式，继续缩小范围。
+\end{enumerate}
+
+从工程角度看，这种方法本质上是在真实硬件上构造一种``可控、可观测''的局部实验环境。它的价值在于，即使设计无法在第一次板级运行中正常工作，设计者仍然可以逐步恢复对系统行为的理解。
+
+\subsection{调试信号规划的基本原则}\label{ux8c03ux8bd5ux4fe1ux53f7ux89c4ux5212ux7684ux57faux672cux539fux5219}
+
+是否容易调试，很大程度上并不是在问题出现后才决定的，而是在编码阶段就已经埋下了伏笔。若
+RTL
+结构过于混乱、关键状态没有单独信号、控制与数据通路完全缠绕，后续即使插入
+ILA，也很难快速定位问题。
+
+因此，在日常设计中应尽量遵循以下原则：
+
+\begin{itemize}
+\tightlist
+\item
+  为关键状态机保留清晰的状态编码与状态输出；
+\item
+  对握手完成、错误检测、超时告警等事件留出明确标志；
+\item
+  尽量避免让多个语义不同的控制共享同一信号；
+\item
+  对跨模块接口维持统一命名和清晰时序关系。
+\end{itemize}
+
+这些做法看似只是编码规范，实际上直接决定了后续调试的效率。
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{覆盖率驱动的验证思路}\label{ux8986ux76d6ux7387ux9a71ux52a8ux7684ux9a8cux8bc1ux601dux8def}
+
+仅靠``跑过几个测试样例''并不能说明设计已经被充分验证。随着模块复杂度提高，验证工作的关键问题逐渐变成：当前测试到底覆盖了多少真实行为？哪些路径已经被验证，哪些路径还从未被触发？覆盖率驱动验证正是围绕这一问题展开的。
+
+\subsection{代码覆盖率与功能覆盖率}\label{ux4ee3ux7801ux8986ux76d6ux7387ux4e0eux529fux80fdux8986ux76d6ux7387}
+
+在教学中，覆盖率通常可粗略分为两类。第一类是\textbf{代码覆盖率}，它更关注
+RTL
+代码本身是否被执行过；第二类是\textbf{功能覆盖率}，它更关注设计需求中定义的行为是否被验证到。
+
+二者的区别可以从以下角度理解：
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+类型
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+关注对象
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+典型问题
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+代码覆盖率 & 语句、分支、条件、状态等是否被执行 &
+``这段代码有没有跑到？'' \\
+功能覆盖率 & 设计需求中的场景与组合是否被覆盖 &
+``这种业务情况有没有测到？'' \\
+\end{longtable}
+
+例如，一个 UART 模块即使所有 \passthrough{\lstinline!if!}
+分支都执行过，也不代表波特率配置、奇偶校验、异常停止位等组合场景都已经覆盖。因此，代码覆盖率更像``结构层面的检查''，而功能覆盖率更接近``需求层面的检查''。
+
+\subsection{覆盖率的工程价值}\label{ux8986ux76d6ux7387ux7684ux5de5ux7a0bux4ef7ux503c}
+
+覆盖率的真正价值不在于追求某个绝对数字，而在于帮助设计者识别验证盲区。若某段错误恢复逻辑从未触发，就说明现有测试可能过于理想；若某个状态机分支一直未覆盖，就说明测试场景尚不完整；若某些关键功能组合始终没有进入覆盖统计，就说明验证计划可能与设计目标没有真正对齐。
+
+因此，在工程中应把覆盖率理解为一种反馈机制，而不是成绩指标。它回答的不是``设计是不是已经绝对正确''，而是``我们目前凭什么相信它已经被足够认真地测试过''。
+
+\subsection{一个简单的功能覆盖示例}\label{ux4e00ux4e2aux7b80ux5355ux7684ux529fux80fdux8986ux76d6ux793aux4f8b}
+
+在支持 SystemVerilog 覆盖率的环境中，可以使用
+\passthrough{\lstinline!covergroup!} 描述希望统计的功能场景。例如：
+
+\begin{lstlisting}
+covergroup cg_uart_transaction;
+  baud_rate: coverpoint baud {
+    bins standard = {9600, 19200, 38400, 57600, 115200};
+  }
+  data_length: coverpoint length {
+    bins short = {[5:8]};
+    bins long  = {[9:10]};
+  }
+  cross baud_rate, data_length;
+endgroup
+\end{lstlisting}
+
+这个示例的重点不在语法本身，而在于它体现了一种思路：不仅要分别测试不同波特率和不同数据位宽，还要关注它们的组合是否真的被验证到。对于本科教学而言，理解这一思想比记忆完整语法更重要。
+
+\subsection{验证闭环与覆盖率收敛}\label{ux9a8cux8bc1ux95edux73afux4e0eux8986ux76d6ux7387ux6536ux655b}
+
+覆盖率驱动验证通常形成如下闭环：
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  根据设计需求制定验证点；
+\item
+  编写测试场景并运行仿真；
+\item
+  查看覆盖率报告，识别未覆盖部分；
+\item
+  补充测试，再次验证；
+\item
+  在覆盖率与错误定位之间反复迭代。
+\end{enumerate}
+
+这种过程说明，验证并不是一次性完成的静态工作，而是随着对设计理解加深而不断修正的过程。对读者而言，建立这种``验证闭环''意识，比单独掌握某个工具命令更重要。
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{SystemC 建模入门}\label{systemc-ux5efaux6a21ux5165ux95e8}
+
+当设计规模进一步扩大，或者希望在比 RTL 更高的抽象层次描述系统时，仅使用
+Verilog 或 SystemVerilog
+往往不再足够方便。尤其是在需要描述模块交互、时间行为、事务流程，或者希望把硬件模型与软件测试环境结合时，SystemC
+就体现出明显价值。
+
+\subsection{什么是 SystemC}\label{ux4ec0ux4e48ux662f-systemc}
+
+SystemC 是建立在 C++
+之上的系统级建模库。它并不是一门完全独立的新语言，而是一套通过 C++
+类、模板和宏构造出来的建模框架。借助这套框架，设计者可以用接近软件编程的方式描述硬件模块、并发进程、事件通知和时间推进。
+
+从课程角度看，可以把 SystemC 理解为介于``纯软件程序''和``RTL
+硬件描述''之间的一种系统建模手段。它的定位通常包括：
+
+\begin{itemize}
+\tightlist
+\item
+  在较高抽象层次描述模块行为；
+\item
+  构建系统级模型和验证环境；
+\item
+  连接软件驱动与硬件模型；
+\item
+  与 Verilator 等工具结合形成联合仿真流程。
+\end{itemize}
+
+需要注意的是，SystemC 的主要优势并不在于直接替代
+RTL，而在于帮助设计者更早地组织系统结构、更快地搭建验证环境，并更自然地与
+C++ 软件生态配合。
+
+\subsection{模块、端口与信号}\label{ux6a21ux5757ux7aefux53e3ux4e0eux4fe1ux53f7}
+
+SystemC 的基本组织单位是模块。模块通常通过
+\passthrough{\lstinline!SC\_MODULE!}
+或等价写法定义，并可包含端口、内部信号和进程。其结构与 Verilog
+中的模块概念类似，但语法形式更接近 C++。
+
+下面给出一个最简化的计数器示例：
+
+\begin{lstlisting}[language={C++}]
+#include <systemc>
+using namespace sc_core;
+using namespace sc_dt;
+
+SC_MODULE(counter) {
+    sc_in<bool> clk;
+    sc_in<bool> rst;
+    sc_out<sc_uint<4>> q;
+
+    sc_uint<4> value;
+
+    void seq_proc() {
+        if (rst.read()) {
+            value = 0;
+        } else {
+            value = value + 1;
+        }
+        q.write(value);
+    }
+
+    SC_CTOR(counter) : value(0) {
+        SC_METHOD(seq_proc);
+        sensitive << clk.pos();
+    }
+};
+\end{lstlisting}
+
+这个例子体现了几个关键点：\passthrough{\lstinline!clk!} 和
+\passthrough{\lstinline!rst!} 是输入端口，\passthrough{\lstinline!q!}
+是输出端口，\passthrough{\lstinline!seq\_proc!} 是描述行为的进程，而
+\passthrough{\lstinline!sensitive << clk.pos()!}
+则表示该进程在时钟上升沿触发。若从概念上看，它与一个同步计数器 RTL
+的含义是相通的。
+
+\subsection{时间、事件与进程}\label{ux65f6ux95f4ux4e8bux4ef6ux4e0eux8fdbux7a0b}
+
+SystemC 的一个重要特征，是它显式提供了时间和事件机制。与普通 C++
+程序按顺序执行不同，SystemC
+仿真内核会根据时间推进和事件触发调度各个进程运行。常见进程类型包括：
+
+\begin{itemize}
+\tightlist
+\item
+  \passthrough{\lstinline!SC\_METHOD!}：适合描述组合逻辑或无
+  \passthrough{\lstinline!wait!} 的短过程；
+\item
+  \passthrough{\lstinline!SC\_THREAD!}：适合描述需要等待时间或事件的行为过程；
+\item
+  \passthrough{\lstinline!SC\_CTHREAD!}：更接近时钟驱动的顺序过程建模。
+\end{itemize}
+
+例如，在一个测试平台中，可以使用
+\passthrough{\lstinline!wait(10, SC\_NS)!} 表示等待
+10ns，再修改输入信号；也可以使用事件通知机制让多个模块在特定条件下同步响应。正因为有了这些机制，SystemC
+才特别适合用来描述``模块如何交互''\,``事务何时发生''以及``系统如何随时间演化''。
+
+\subsection{SystemC 与 RTL
+的关系}\label{systemc-ux4e0e-rtl-ux7684ux5173ux7cfb}
+
+学习 SystemC 时，一个常见误解是把它看成``更高级的
+Verilog''。这种理解并不准确。二者虽然都可用于硬件相关建模，但关注层次并不完全相同。
+
+\begin{itemize}
+\tightlist
+\item
+  RTL 更强调寄存器传输级结构、时钟边沿行为与可综合实现；
+\item
+  SystemC 更强调系统行为、模块交互和验证环境组织；
+\item
+  某些受限风格的 SystemC 可用于综合，但这不是初学阶段的重点。
+\end{itemize}
+
+因此，对本课程而言，SystemC
+的主要意义在于帮助读者建立系统级视角，而不是立即替代已有的 RTL
+设计方法。它让我们能够在更高抽象层上先验证系统结构和交互逻辑，再决定哪些部分需要下沉到
+RTL 实现。
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{Verilator 与 SystemC
+联合验证}\label{verilator-ux4e0e-systemc-ux8054ux5408ux9a8cux8bc1}
+
+在掌握了 SystemC 的基本概念之后，一个自然的问题是：它如何与已有的
+Verilog 设计结合？这正是 Verilator 发挥作用的地方。Verilator 可以把
+Verilog 或 SystemVerilog 模块转换为 C++ 或 SystemC
+可调用模型，从而让设计者在一个统一的软件仿真环境中组织更复杂的验证流程。
+
+\subsection{为什么要结合 Verilator 与
+SystemC}\label{ux4e3aux4ec0ux4e48ux8981ux7ed3ux5408-verilator-ux4e0e-systemc}
+
+对于中小规模实验，传统 testbench
+已经能够完成很多功能验证工作。但随着系统规模增长，若仍完全依赖 HDL
+testbench，就可能面临以下问题：
+
+\begin{itemize}
+\tightlist
+\item
+  测试平台扩展性较差；
+\item
+  与软件环境或上层协议模型衔接不方便；
+\item
+  大规模回归验证效率不高；
+\item
+  构造复杂事务流时编写和维护成本较高。
+\end{itemize}
+
+而 Verilator 与 SystemC 结合后，可以让 RTL
+模块以更接近软件工程的方式接入验证环境。这种方式特别适合以下场景：
+
+\begin{itemize}
+\tightlist
+\item
+  需要高性能回归仿真；
+\item
+  需要把 RTL 与 C++/SystemC 模型连接起来；
+\item
+  需要更灵活地组织激励、断言和事务级行为；
+\item
+  希望在系统原型尚未完备时先搭建联合验证框架。
+\end{itemize}
+
+\subsection{基本流程示例}\label{ux57faux672cux6d41ux7a0bux793aux4f8b}
+
+一个典型的 Verilator + SystemC 流程大致包括：准备 Verilog 设计文件、编写
+\passthrough{\lstinline!sc\_main.cpp!} 作为 SystemC 顶层驱动、调用
+Verilator 生成模型，再编译并运行可执行程序。例如：
+
+\begin{lstlisting}[language=bash]
+verilator --sc --exe -Wall sc_main.cpp our.v
+make -j -C obj_dir -f Vour.mk Vour
+obj_dir/Vour
+\end{lstlisting}
+
+其基本含义是：Verilator 先把 \passthrough{\lstinline!our.v!} 转换为
+SystemC/C++ 模型，再把 \passthrough{\lstinline!sc\_main.cpp!}
+与该模型一起编译为可执行程序。之后，设计者就可以在
+\passthrough{\lstinline!sc\_main.cpp!} 中用 SystemC
+的方式驱动时钟、施加输入、检查输出。
+
+下面给出一个简化的 \passthrough{\lstinline!sc\_main.cpp!} 结构示意：
+
+\begin{lstlisting}[language={C++}]
+#include "Vour.h"
+#include "verilated.h"
+#include <systemc>
+
+int sc_main(int argc, char** argv) {
+    Verilated::commandArgs(argc, argv);
+    sc_clock clk{"clk", 10, SC_NS};
+    Vour top{"top"};
+    top.clk(clk);
+
+    while (!Verilated::gotFinish()) {
+        sc_start(1, SC_NS);
+    }
+    return 0;
+}
+\end{lstlisting}
+
+这个示例并不复杂，但它非常清楚地体现了联合验证的基本思想：RTL
+模块不再只存在于 HDL 仿真器内部，而是被纳入一个更通用的 SystemC
+仿真环境之中。
+
+\subsection{适用场景与局限}\label{ux9002ux7528ux573aux666fux4e0eux5c40ux9650}
+
+Verilator 与 SystemC
+的组合虽然很有价值，但也并非适合所有教学或工程场景。其优势主要在于执行效率高、可与软件环境深度结合、便于组织较复杂验证逻辑；其局限则在于环境搭建相对复杂，且并不等同于完整的商业仿真器能力。
+
+因此，在课程学习阶段，更合理的目标通常不是立即建立大型验证平台，而是先理解其工作机制与适用场景。读者只要能够理解``为什么需要系统级模型''和``RTL
+如何被接入更高层验证环境''，就已经为后续深入学习打下了基础。
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{JTAG
+与边界扫描的基本认识}\label{jtag-ux4e0eux8fb9ux754cux626bux63cfux7684ux57faux672cux8ba4ux8bc6}
+
+除了片上逻辑观测和仿真验证之外，板级测试还常常依赖 JTAG
+与边界扫描技术。它们的关注点与 ILA、VIO 并不相同。ILA
+更像``在芯片内部看波形''，而边界扫描更像``从器件边界检查连通性与测试可访问性''。
+
+\subsection{JTAG 的基本作用}\label{jtag-ux7684ux57faux672cux4f5cux7528}
+
+JTAG 最初的重要用途之一，是为器件提供统一的测试与调试访问接口。在 FPGA
+开发中，JTAG 常用于以下任务：
+
+\begin{itemize}
+\tightlist
+\item
+  下载配置数据或程序；
+\item
+  访问片上调试资源；
+\item
+  进行边界扫描测试；
+\item
+  在板级联调中识别器件连接状态。
+\end{itemize}
+
+从学习角度看，可以把 JTAG
+理解为一种``进入器件内部测试链路的标准入口''。它本身并不等同于某种具体测试方法，而是多种调试和测试能力的承载接口。
+
+\subsection{边界扫描的意义}\label{ux8fb9ux754cux626bux63cfux7684ux610fux4e49}
+
+边界扫描的核心思想是：在芯片 I/O
+边界附近加入可控、可观测的扫描单元，从而在不依赖系统正常运行的前提下检查板级互连是否正确。这种方法对于判断开路、短路、焊接错误和部分接口连线异常很有帮助。
+
+与普通功能调试相比，边界扫描更侧重``连得对不对''，而不是``功能跑得对不对''。例如，若某个外设始终没有响应，问题可能并不在协议逻辑本身，而在于某条板级连线没有真正接通。此时，边界扫描就比单纯看功能波形更直接。
+
+\subsection{与在线逻辑调试的区别}\label{ux4e0eux5728ux7ebfux903bux8f91ux8c03ux8bd5ux7684ux533aux522b}
+
+在工程实践中，边界扫描和 ILA/VIO 各自解决的问题并不相同：
+
+\begin{itemize}
+\tightlist
+\item
+  ILA/VIO 关注的是片上逻辑行为与运行时状态；
+\item
+  边界扫描关注的是板级连接、测试访问与器件边界可观测性；
+\item
+  仿真关注的是设计模型在给定输入下的逻辑正确性。
+\end{itemize}
+
+把这三者区分开来，有助于读者形成更清晰的调试方法论。不同问题应使用不同手段，而不是寄希望于某一种工具解决全部问题。
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{调试与测试的工程案例分析}\label{ux8c03ux8bd5ux4e0eux6d4bux8bd5ux7684ux5de5ux7a0bux6848ux4f8bux5206ux6790}
+
+为了把前面讨论的内容串联起来，下面以两个常见工程场景说明不同方法的配合方式。
+
+\subsection{案例一：串行接口偶发丢帧}\label{ux6848ux4f8bux4e00ux4e32ux884cux63a5ux53e3ux5076ux53d1ux4e22ux5e27}
+
+设想一个 UART
+接收模块在简单实验中工作正常，但当上位机连续发送数据时，偶尔会出现丢帧。面对这类问题，较合理的分析路径通常是：
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  先在仿真中提高发送密度，观察问题是否可复现；
+\item
+  使用 ILA 捕获接收有效信号、FIFO 状态和错误标志；
+\item
+  检查是否存在跨时钟域处理不当或 FIFO 深度不足；
+\item
+  若仿真很难稳定复现，可考虑在 SystemC 或 C++ 环境中构造更长时间测试；
+\item
+  通过覆盖率检查异常帧、连续帧和边界帧是否真正被验证到。
+\end{enumerate}
+
+这个案例说明，定位偶发问题往往需要``仿真 + 板上观测 +
+更高层测试模型''联合使用，而不是单靠一次板级观测就得出结论。
+
+\subsection{案例二：系统上板后无明显输出}\label{ux6848ux4f8bux4e8cux7cfbux7edfux4e0aux677fux540eux65e0ux660eux663eux8f93ux51fa}
+
+另一类常见问题是：比特流可以成功下载，但板上现象接近``什么都没有发生''。此时，问题不一定在核心算法模块，也可能出在更基础的环节。更稳妥的定位顺序通常包括：
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  确认时钟是否存在、复位是否正常释放；
+\item
+  检查约束文件中的管脚分配与 I/O 标准；
+\item
+  用 VIO 手动施加简化控制信号，判断局部路径是否可通；
+\item
+  用 ILA 观察状态机是否停在初始化阶段；
+\item
+  若仍无法判断，可结合边界扫描确认关键接口物理连线是否可靠。
+\end{enumerate}
+
+这个案例说明，工程中的很多``系统不起作用''问题，本质上并不是复杂算法失效，而是调试路径没有从最基础的条件开始检查。
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{本章小结}\label{ux672cux7ae0ux5c0fux7ed3}
+
+本章围绕 FPGA
+工程中的调试、测试与系统级建模展开讨论。首先，说明了调试与测试在工程流程中的定位，强调仿真正确、综合通过和板上稳定运行之间仍存在明显差距。其次，介绍了
+ILA 与 VIO
+的基本作用，指出板级调试的关键在于构造``可控、可观测''的实验环境，而不是盲目抓取大量信号。再次，本章讨论了覆盖率驱动验证的基本思想，说明代码覆盖率与功能覆盖率分别回答不同层面的问题。然后，本章引入了
+SystemC
+的基础概念，解释模块、进程、时间与事件在系统级建模中的作用，并进一步说明
+Verilator 如何把 RTL 接入 SystemC 验证环境。最后，本章介绍了 JTAG
+与边界扫描的基本意义，帮助读者区分片上调试、仿真验证和板级连通性测试各自的适用范围。
+
+总体而言，调试与测试技术的核心并不在于掌握多少工具命令，而在于建立一种分层定位、证据驱动和模型协同的工程方法。对
+FPGA 设计者来说，这种能力与编写 RTL 本身同样重要。
+
+\section{术语表}\label{ux672fux8bedux8868}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+术语
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+英文全称
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+含义说明
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+ILA & Integrated Logic Analyzer &
+片上在线逻辑分析仪，用于在真实硬件运行中捕获内部信号波形。 \\
+VIO & Virtual Input/Output &
+虚拟输入输出工具，用于在板级运行时读写少量内部控制或状态信号。 \\
+CDC & Clock Domain Crossing &
+时钟域交叉，指信号在不同时钟域之间传递。 \\
+Coverage & Coverage &
+覆盖率，用于衡量测试对代码结构或功能需求的覆盖程度。 \\
+JTAG & Joint Test Action Group &
+一种标准测试与调试接口，常用于下载、调试和边界扫描。 \\
+Boundary Scan & Boundary Scan &
+边界扫描，通过器件边界扫描单元检查板级互连状态。 \\
+SystemC & SystemC & 基于 C++ 的系统级建模与仿真框架。 \\
+SC\_METHOD & SC\_METHOD & SystemC 中的一类进程，适合描述无
+\passthrough{\lstinline!wait!} 的短过程。 \\
+SC\_THREAD & SC\_THREAD & SystemC
+中的一类进程，适合描述需要等待时间或事件的行为过程。 \\
+Verilator & Verilator & 可将 Verilog/SystemVerilog 转换为 C++ 或 SystemC
+模型的开源工具。 \\
+\end{longtable}
+
+\section{习题与思考}\label{ux4e60ux9898ux4e0eux601dux8003}
+
+\begin{itemize}
+\tightlist
+\item
+  为什么``功能仿真通过''并不等于``板上一定工作正常''？请结合时钟、复位、接口和约束等因素说明原因。
+\item
+  ILA 与 VIO
+  各自更适合解决什么问题？为什么它们在工程中常常需要配合使用？
+\item
+  为什么覆盖率报告不能简单理解为``分数越高越好''？它真正反映的是什么？
+\item
+  SystemC 为什么被称为系统级建模框架，而不是单纯的 HDL 语言替代品？
+\item
+  在什么场景下，Verilator 与 SystemC 的联合验证会比传统 HDL testbench
+  更有优势？
+\item
+  边界扫描与 ILA 都能帮助定位问题，它们的关注重点有何不同？
+\item
+  若一个系统上板后完全没有预期输出，应按怎样的顺序开展定位，才能避免无效试错？
+\end{itemize}
+
+\section{课程作业：调试方案设计与验证记录}\label{ux8bfeux7a0bux4f5cux4e1aux8c03ux8bd5ux65b9ux6848ux8bbeux8ba1ux4e0eux9a8cux8bc1ux8bb0ux5f55}
+
+请结合本章内容，围绕一个具体数字模块或小型系统完成一次``调试方案设计''作业。模块可自行选择，例如
+UART、FIFO、状态机控制器、计数器链路或简单流水线。作业要求如下：
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  说明被调试对象的功能、接口和潜在故障点；
+\item
+  人为设定至少一种可能故障情形，例如复位时序不当、握手信号缺失、跨时钟域处理错误或状态转移异常；
+\item
+  设计一套定位方案，明确哪些信号适合用 ILA 观察，哪些控制适合由 VIO
+  施加；
+\item
+  若暂不具备板级实验条件，可用仿真波形替代 ILA
+  采样结果，但必须说明二者在定位价值上的差异；
+\item
+  若具备一定基础，可额外给出一个简化的 SystemC 或 Verilator
+  联合验证思路，说明它适合解决什么类型的问题；
+\item
+  用文字总结：在该案例中，为什么不能只依赖``功能仿真通过''这一条证据。
+\end{enumerate}
+
+\section{作业报告要求}\label{ux4f5cux4e1aux62a5ux544aux8981ux6c42}
+
+本章作业报告应至少包含以下内容：
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  被调试模块简介与问题背景；
+\item
+  预设故障场景或异常现象描述；
+\item
+  调试信号选择依据与触发条件设计；
+\item
+  调试过程记录，可包含波形截图、状态表或定位步骤；
+\item
+  根因分析与修改方案；
+\item
+  修改后如何再次验证问题已被解决；
+\item
+  对 ILA、VIO、仿真和高层模型各自作用的简要反思。
+\end{enumerate}
+
+\section{阅读建议}\label{ux9605ux8bfbux5efaux8bae}
+
+建议读者在学习本章后，至少完成一次基于 ILA
+的板级调试实验，并尝试记录``现象、触发条件、观测信号、分析结论''四个要素，以训练证据驱动的调试习惯。对于希望进一步理解
+SystemC
+的读者，可先从简单计数器、握手接口或生产者-消费者模型入手，练习模块、端口与进程的基本写法，再结合
+Verilator 提供的小型示例工程体会 RTL 与 SystemC
+联合验证的工作方式。若后续希望进一步深入，可继续阅读 FPGA
+厂商关于在线调试工具的文档，以及 Verilator、SystemC
+官方示例中关于仿真控制、波形跟踪和测试平台组织的内容。

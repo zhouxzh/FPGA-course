@@ -1,0 +1,623 @@
+\chapter{第7讲：设计优化技术}\label{ux7b2c7ux8bb2ux8bbeux8ba1ux4f18ux5316ux6280ux672f}
+
+前几讲主要围绕 FPGA
+设计流程中的结构认知、仿真验证、逻辑综合、接口设计以及系统级集成展开讨论。当设计规模继续增大后，工程实践中的核心问题往往不再是``功能是否正确''，而是``设计是否足够快、足够省、足够稳''。这就引出了设计优化问题。
+
+所谓设计优化，并不是简单地追求更高频率或更少资源，而是在满足功能要求的前提下，对时序、面积、功耗和可实现性进行综合权衡。一个功能完全正确的设计，若无法通过时序收敛、占用资源过多、功耗过高，或依赖不合理约束才能实现，都难以称为工程上成熟的方案。因此，掌握基本优化方法，是从``会写
+RTL''走向``能完成工程设计''的关键一步。
+
+本章围绕 FPGA
+设计中的常见优化技术展开讨论，重点介绍时序收敛的基本方法、面积优化技巧、功耗分析与优化思路，以及设计约束的规范写法。通过本章学习，读者应能够初步建立``问题定位---优化选择---约束配合---结果验证''的基本工程意识。
+
+\section{学习目标}\label{ux5b66ux4e60ux76eeux6807}
+
+通过本章学习，读者应达到以下目标。首先，应能够理解时序优化在 FPGA
+设计中的核心地位，掌握建立时间、保持时间、关键路径和时钟域交叉等基本概念。其次，应能够结合
+RTL
+结构分析常见时序问题，并掌握流水线、寄存器平衡和约束修正等基本优化方法。再次，应能够理解面积优化的常见思路，包括资源共享、逻辑折叠和状态机编码选择等。然后，应能够认识
+FPGA
+功耗的主要来源，并掌握通过时钟使能、切换率控制和结构优化降低功耗的基本方法。最后，应能够编写基本时序约束，理解时序例外约束的适用条件，并避免不恰当约束掩盖真实设计问题。
+
+\section{引例：为什么``功能正确''的设计仍可能无法实现}\label{ux5f15ux4f8bux4e3aux4ec0ux4e48ux529fux80fdux6b63ux786eux7684ux8bbeux8ba1ux4ecdux53efux80fdux65e0ux6cd5ux5b9eux73b0}
+
+在 FPGA
+学习过程中，读者经常会遇到这样一种情况：仿真波形完全正确，综合也顺利通过，但实现阶段却报告时序违例，或者虽然可以生成比特流，上板后却工作不稳定。还有一些设计虽然最终能够运行，但资源利用率过高，导致后续无法继续扩展；或者由于切换活动过于频繁，引起较高动态功耗。这些问题说明，数字设计并不止于功能描述本身。
+
+例如，一个组合加法链在仿真中只体现为``一个表达式''，但在硬件中可能形成较长关键路径；一个跨时钟域控制信号在波形上似乎``只是多等一拍''，但若未做同步处理，就可能引发亚稳态；一个看似节省逻辑的门控时钟写法，在
+FPGA
+中反而可能引入严重时钟质量问题。由此可见，优化问题本质上是``代码结构与硬件实现之间关系''的进一步体现。
+
+因此，本章讨论的重点不是孤立记忆若干优化技巧，而是理解为什么这些技巧有效，以及它们分别适用于什么问题。
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{时序收敛方法}\label{ux65f6ux5e8fux6536ux655bux65b9ux6cd5}
+
+时序收敛是 FPGA
+设计优化中的首要问题。所谓时序收敛，是指在目标时钟频率下，设计中所有受约束路径都满足建立时间和保持时间要求。若设计无法在规定时钟周期内稳定工作，即使逻辑功能完全正确，也难以投入使用。
+
+\subsection{建立时间与保持时间约束}\label{ux5efaux7acbux65f6ux95f4ux4e0eux4fddux6301ux65f6ux95f4ux7ea6ux675f}
+
+对同步时序电路而言，寄存器之间的数据传输必须满足两个基本条件：
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{建立时间（Setup
+  Time）}：数据在目的寄存器采样边沿到来之前，必须已经稳定一段最小时间；
+\item
+  \textbf{保持时间（Hold
+  Time）}：数据在采样边沿到来之后，仍需继续保持一段最小时间。
+\end{itemize}
+
+在工程中，这些要求需要通过时钟和输入输出延迟约束明确告知实现工具。例如：
+
+\begin{lstlisting}[language=tcl]
+create_clock -period 10 [get_ports clk]
+set_input_delay -clock clk 2 [get_ports data_in]
+set_output_delay -clock clk 1 [get_ports data_out]
+\end{lstlisting}
+
+上述约束表达的含义是：顶层时钟 \passthrough{\lstinline!clk!} 的周期为
+10ns，输入端口 \passthrough{\lstinline!data\_in!} 相对于该时钟具有 2ns
+的输入延迟，输出端口 \passthrough{\lstinline!data\_out!} 则具有 1ns
+的输出延迟。只有在明确这些边界条件后，工具才能正确判断外部接口与内部逻辑是否满足时序要求。
+
+需要强调的是，\textbf{约束不是为了``让工具通过''而写，而是为了准确描述真实硬件环境}。若约束本身不正确，则后续时序报告即使``通过''，其结论也可能没有工程意义。
+
+\subsection{关键路径识别}\label{ux5173ux952eux8defux5f84ux8bc6ux522b}
+
+时序问题通常集中在少数关键路径上。关键路径是指在当前时钟周期下延迟最大的有效路径，其裕量（slack）最小。当关键路径的建立时间裕量为负时，说明设计无法在目标频率下稳定工作。
+
+例如，可使用如下命令查看最差路径：
+
+\begin{lstlisting}[language=tcl]
+report_timing -slack_lesser_than 0 -nworst 10 -setup
+\end{lstlisting}
+
+这类报告通常能帮助设计者回答几个关键问题：
+
+\begin{itemize}
+\tightlist
+\item
+  问题出现在什么起点和终点之间；
+\item
+  是组合逻辑过长，还是布线延迟过大；
+\item
+  问题集中在某个模块内部，还是跨模块层次连接；
+\item
+  是否与时钟定义、约束遗漏或路径分类错误有关。
+\end{itemize}
+
+从教学角度看，学习阅读时序报告比单纯记忆命令更重要。因为优化的起点并不是``盲目改代码''，而是准确识别问题路径。
+
+\subsection{时钟域交叉分析}\label{ux65f6ux949fux57dfux4ea4ux53c9ux5206ux6790}
+
+当一个信号从一个时钟域进入另一个时钟域时，就形成了时钟域交叉（Clock
+Domain
+Crossing，CDC）。由于源域与目标域之间没有固定相位关系，若直接采样异步信号，目的寄存器可能进入亚稳态，进而导致系统不稳定。
+
+最基本的单比特同步方式是使用两级寄存器同步器，例如：
+
+\begin{lstlisting}[language=Verilog]
+always @(posedge clk_dst) begin
+    meta_reg   <= data_src;
+    stable_reg <= meta_reg;
+end
+\end{lstlisting}
+
+这类结构可以显著降低亚稳态传播风险，但需要注意其适用范围：
+
+\begin{itemize}
+\tightlist
+\item
+  适合单比特控制信号；
+\item
+  不适合直接同步多比特总线；
+\item
+  不保证``事件不丢失''，仅降低采样不稳定概率。
+\end{itemize}
+
+对于多比特数据跨域，通常应采用握手协议、异步 FIFO 或 Gray
+编码计数器等更稳妥的方法。也就是说，CDC
+优化不是``多打一拍''这么简单，而是必须根据数据类型和业务语义选择合适结构。
+
+\subsection{流水线与寄存器平衡}\label{ux6d41ux6c34ux7ebfux4e0eux5bc4ux5b58ux5668ux5e73ux8861}
+
+当组合逻辑过长导致关键路径超时，最常见的优化方法是插入流水线寄存器，将一条长路径拆成多条较短路径。例如：
+
+\begin{lstlisting}[language=Verilog]
+// 优化前
+always @(posedge clk)
+    out <= a + b + c + d;
+
+// 优化后
+reg [31:0] stage1;
+always @(posedge clk) begin
+    stage1 <= a + b;
+    out    <= stage1 + c + d;
+end
+\end{lstlisting}
+
+优化前，所有加法器处于同一拍内完成；优化后，前一部分运算在第一拍完成，后一部分在下一拍完成。这样做的代价是增加了一个时钟周期延迟，但收益是显著缩短了单周期内的组合路径。
+
+从系统角度看，流水线优化通常意味着以下权衡：
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{优点}：更容易满足高频时序要求；
+\item
+  \textbf{代价}：增加寄存器数量和系统延迟；
+\item
+  \textbf{影响}：可能需要同步调整控制信号和有效标志。
+\end{itemize}
+
+因此，流水线不是越多越好，而应根据吞吐率、延迟容忍度和资源预算综合决定。
+
+\subsection{时序优化的常见策略}\label{ux65f6ux5e8fux4f18ux5316ux7684ux5e38ux89c1ux7b56ux7565}
+
+在 FPGA 工程中，时序优化通常可从以下几个层面展开：
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{RTL
+  结构优化}：减少过深组合逻辑、避免大扇出控制、使用更清晰的数据通路结构；
+\item
+  \textbf{流水线重构}：将关键计算分布到多个周期内完成；
+\item
+  \textbf{资源映射优化}：充分利用 DSP、BRAM 等专用资源，避免用 LUT
+  搭建复杂运算；
+\item
+  \textbf{层次与布局优化}：减少跨区域长连线，必要时配合区域约束；
+\item
+  \textbf{约束修正}：补全漏写时钟、输入输出延迟和时序例外，避免工具误判。
+\end{itemize}
+
+需要建立一个基本认识：\textbf{时序问题未必都是``代码太慢''，也可能是``约束不准''或``跨域不当''造成的}。
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{面积优化技巧}\label{ux9762ux79efux4f18ux5316ux6280ux5de7}
+
+面积优化主要关注如何减少 LUT、触发器、BRAM、DSP
+等资源的占用。在教学和中小型工程中，面积优化的意义主要体现在两个方面：一是让设计更容易装入目标器件；二是为后续功能扩展保留足够余量。
+
+\subsection{资源共享}\label{ux8d44ux6e90ux5171ux4eab}
+
+若多个运算单元不会在同一时刻同时工作，可通过时分复用共享同一套硬件资源。例如多个乘法运算可共用一个乘法器：
+
+\begin{lstlisting}[language=Verilog]
+module shared_mult(
+    input clk,
+    input [3:0] sel,
+    input [15:0] a, b,
+    output reg [31:0] y
+);
+    reg [31:0] temp;
+    always @(posedge clk) begin
+        case(sel)
+            4'b0001: temp <= a[7:0]   * b[7:0];
+            4'b0010: temp <= a[15:8]  * b[15:8];
+            default: temp <= 32'd0;
+        endcase
+        y <= temp;
+    end
+endmodule
+\end{lstlisting}
+
+这种方法的核心思想是：用时间换面积。原本需要多套并行硬件的功能，被顺序调度到同一计算资源上完成。其优点是节省资源，缺点则是吞吐率下降、控制逻辑变复杂。因此，是否采用资源共享，取决于系统是否允许运算分时进行。
+
+\subsection{逻辑折叠与时序化}\label{ux903bux8f91ux6298ux53e0ux4e0eux65f6ux5e8fux5316}
+
+某些组合逻辑可通过寄存器化处理，转化为时序逻辑，从而减小瞬时组合扇出与布线压力。例如：
+
+\begin{lstlisting}[language=Verilog]
+// 优化前
+assign result = (a & b) | (c ^ d);
+
+// 优化后
+always @(posedge clk)
+    result <= (a & b) | (c ^ d);
+\end{lstlisting}
+
+这种优化方式往往带来两个效果：
+
+\begin{itemize}
+\tightlist
+\item
+  将组合路径切入时序边界，改善时序实现；
+\item
+  使部分逻辑更容易被综合工具吸收或重组。
+\end{itemize}
+
+不过也应看到，它并不一定总是减少寄存器总量，有时只是将问题从``纯组合''转移到``时序实现''。因此，逻辑折叠更适合在时序和结构需要的背景下使用，而不应机械套用。
+
+\subsection{状态机编码优化}\label{ux72b6ux6001ux673aux7f16ux7801ux4f18ux5316}
+
+状态机是控制逻辑中的常见结构，不同编码方式会影响面积、速度和可读性。常见编码方式包括二进制编码、Gray
+编码和 One-Hot 编码。
+
+\begin{longtable}[]{@{}lll@{}}
+\toprule\noalign{}
+状态机编码 & 特点 & 适用情况 \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+二进制编码 & 状态位数少，节省寄存器 & 状态数较多、面积敏感场景 \\
+Gray 编码 & 相邻状态切换位数少 & 特殊计数或跨域场景 \\
+One-Hot 编码 & 每个状态独占一位，译码简单 & FPGA 中常有利于提高速度 \\
+\end{longtable}
+
+对于 FPGA
+而言，由于寄存器资源通常较丰富，而组合译码延迟常成为关键因素，因此
+One-Hot 编码在很多控制路径中具有较好实现效果。但若状态数很多，One-Hot
+会明显增加触发器数量，此时仍需权衡。
+
+\subsection{面积优化的注意事项}\label{ux9762ux79efux4f18ux5316ux7684ux6ce8ux610fux4e8bux9879}
+
+面积优化并不意味着``越省越好''。过度追求资源压缩，可能会带来新的问题：
+
+\begin{itemize}
+\tightlist
+\item
+  共享资源过多，导致控制变复杂；
+\item
+  逻辑合并过深，引发时序恶化；
+\item
+  过度减少寄存器，反而增加组合路径长度；
+\item
+  牺牲结构清晰性，降低可维护性。
+\end{itemize}
+
+因此，面积优化应始终服从系统目标。若目标器件资源充足，而时序压力较大，则通常应优先保证结构清晰和时序可靠，而不是一味压缩面积。
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{功耗分析与优化}\label{ux529fux8017ux5206ux6790ux4e0eux4f18ux5316}
+
+在 FPGA
+设计中，功耗通常包括静态功耗和动态功耗两部分。静态功耗主要来自器件漏电和基础偏置，动态功耗则主要来自时钟翻转、信号切换和
+I/O
+活动。对于教学实验板而言，功耗问题可能不总是最突出；但在高密度设计、嵌入式设备或热设计受限场景下，功耗优化就非常重要。
+
+\subsection{功耗分析的基本流程}\label{ux529fux8017ux5206ux6790ux7684ux57faux672cux6d41ux7a0b}
+
+进行功耗优化前，首先应理解功耗的来源，并借助工具生成分析报告。一个简化流程通常包括：
+
+\begin{lstlisting}[language=tcl]
+read_verilog top.v
+link_design
+report_power
+\end{lstlisting}
+
+在具体工具中，流程名称和命令可能略有差异，但基本思想是一致的：先导入设计，再结合实现结果、时钟信息和切换活动估算功耗。若使用
+Vivado，一般可在实现完成后打开已实现设计，并生成功耗报告，从而观察静态功耗和动态功耗的分布情况。
+
+\subsection{功耗优化的主要方向}\label{ux529fux8017ux4f18ux5316ux7684ux4e3bux8981ux65b9ux5411}
+
+功耗优化大致可从以下几个方面展开：
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{降低不必要的切换活动}：让逻辑只在需要时翻转，是降低动态功耗的直接手段。
+\item
+  \textbf{减少高频时钟作用范围}：不必让所有模块都在最高频率下持续工作。
+\item
+  \textbf{合理利用专用资源}：DSP、BRAM 等专用模块在许多场景下比通用 LUT
+  实现更高效。
+\item
+  \textbf{控制 I/O 翻转与高速接口活动}：高速 I/O
+  往往是功耗的重要来源之一。
+\end{itemize}
+
+\subsection{时钟使能与门控时钟}\label{ux65f6ux949fux4f7fux80fdux4e0eux95e8ux63a7ux65f6ux949f}
+
+许多初学者会自然想到``关掉时钟''来减少功耗，例如：
+
+\begin{lstlisting}[language=Verilog]
+wire gated_clk = clk & en;
+always @(posedge gated_clk)
+    q <= d;
+\end{lstlisting}
+
+这种写法在 ASIC 流程中可能对应专用时钟门控单元，但在 FPGA
+中通常\textbf{不建议直接用普通逻辑门生成门控时钟}。原因在于：
+
+\begin{itemize}
+\tightlist
+\item
+  逻辑门控后的时钟不再使用专用时钟网络；
+\item
+  容易引入毛刺、偏斜和不可预测时序问题；
+\item
+  工具往往难以像处理全局时钟那样正确优化其分布。
+\end{itemize}
+
+因此，在 FPGA 设计中，更推荐采用\textbf{时钟使能（Clock Enable）}方式：
+
+\begin{lstlisting}[language=Verilog]
+always @(posedge clk) begin
+    if (en)
+        q <= d;
+end
+\end{lstlisting}
+
+这种写法既能在逻辑功能上实现``只在使能时更新寄存器''，又能保持时钟网络的完整性，是
+FPGA 低功耗设计中更稳妥的做法。
+
+\subsection{功耗优化的工程理解}\label{ux529fux8017ux4f18ux5316ux7684ux5de5ux7a0bux7406ux89e3}
+
+功耗优化通常不是孤立进行的。某些降低功耗的方法可能会增加面积，某些提高速度的方法则可能增加切换率。例如，增加流水线寄存器有时有利于时序，但也会提高寄存器翻转数量。因此，功耗问题往往需要与面积和时序一起综合考虑。
+
+从工程角度看，一个更现实的目标往往不是``绝对最小功耗''，而是``在满足性能要求下，使功耗处于可接受范围内''。
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{设计约束规范}\label{ux8bbeux8ba1ux7ea6ux675fux89c4ux8303}
+
+约束文件是连接 RTL
+设计与实现工具的重要桥梁。若没有正确约束，工具就无法准确理解时钟关系、I/O
+时序和特殊路径属性。可以说，很多所谓``优化问题''，本质上首先是``约束问题''。
+
+\subsection{SDC 基本结构}\label{sdc-ux57faux672cux7ed3ux6784}
+
+常见的时序约束通常包括时钟定义、输入输出延迟、时钟组关系和多周期路径等内容。例如：
+
+\begin{lstlisting}[language=tcl]
+# 时钟定义
+create_clock -name sys_clk -period 10 [get_ports clk]
+
+# 输入输出约束
+set_input_delay -clock sys_clk 2 [all_inputs]
+set_output_delay -clock sys_clk 1 [all_outputs]
+
+# 跨时钟域约束
+set_clock_groups -asynchronous -group {clk1} -group {clk2}
+
+# 多周期路径
+set_multicycle_path 3 -setup -from [get_clocks clkA] -to [get_clocks clkB]
+\end{lstlisting}
+
+这些约束分别回答了几个基本问题：
+
+\begin{itemize}
+\tightlist
+\item
+  时钟周期是多少；
+\item
+  外部数据与时钟的关系是什么；
+\item
+  哪些时钟彼此异步；
+\item
+  哪些路径允许跨越多个周期完成。
+\end{itemize}
+
+\subsection{时序例外约束}\label{ux65f6ux5e8fux4f8bux5916ux7ea6ux675f}
+
+为了更准确描述特殊路径，设计中常需使用时序例外约束。常见类型如下：
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+约束类型
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+应用场景
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+说明
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\passthrough{\lstinline!set\_false\_path!} & 异步路径或无需分析的路径 &
+告诉工具该路径不参与正常时序检查 \\
+\passthrough{\lstinline!set\_multicycle\_path!} & 数据允许跨多个周期稳定
+& 修改该路径的建立/保持检查窗口 \\
+\passthrough{\lstinline!set\_max\_delay!} & 对特定路径施加最大延迟限制 &
+常用于接口或特殊控制路径 \\
+\end{longtable}
+
+这些约束非常有用，但也容易被误用。尤其需要注意：\textbf{时序例外的目的是准确描述真实设计，而不是掩盖未解决的时序问题}。若本应同步处理的跨域信号被简单设为
+false path，工具虽然不再报警，但硬件风险仍然存在。
+
+\subsection{物理约束}\label{ux7269ux7406ux7ea6ux675f}
+
+除时序约束外，设计实现还依赖物理约束，包括管脚分配、I/O
+电平标准和布局区域限制等。例如：
+
+\begin{lstlisting}[language=tcl]
+# I/O 管脚约束
+set_property PACKAGE_PIN AJ12 [get_ports {data[0]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {data[0]}]
+
+# 布局约束
+place_cell inst_A RAMB36_X0Y5
+\end{lstlisting}
+
+物理约束的主要意义在于：
+
+\begin{itemize}
+\tightlist
+\item
+  确保顶层端口与开发板实际连线一致；
+\item
+  保证器件电气标准正确；
+\item
+  在必要时引导布局，提高实现质量。
+\end{itemize}
+
+不过，对初学阶段而言，最重要的仍是理解``约束描述的是客观硬件边界''，而不是``写几条命令让工具不报错''。
+
+\subsection{约束编写的基本原则}\label{ux7ea6ux675fux7f16ux5199ux7684ux57faux672cux539fux5219}
+
+为了提高设计可实现性，编写约束时应遵循以下原则：
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{先完整定义主时钟和派生时钟}；
+\item
+  \textbf{明确输入输出接口时序边界}；
+\item
+  \textbf{对异步时钟域关系进行准确说明}；
+\item
+  \textbf{慎用时序例外，确保每一条都有明确依据}；
+\item
+  \textbf{约束应与原理图、板级连接和系统架构一致}；
+\item
+  \textbf{在修改约束后重新检查时序报告，而不是只看``是否通过''}。
+\end{itemize}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{优化流程与工程实践建议}\label{ux4f18ux5316ux6d41ux7a0bux4e0eux5de5ux7a0bux5b9eux8df5ux5efaux8bae}
+
+在实际工程中，优化通常不是一次完成的，而是一个反复迭代过程。较为合理的处理顺序通常如下：
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{先确认功能正确}：没有功能正确性，优化没有意义。
+\item
+  \textbf{补全时钟与 I/O 约束}：没有准确约束，时序分析结论不可靠。
+\item
+  \textbf{检查关键路径和跨域结构}：优先排查真正影响实现的核心问题。
+\item
+  \textbf{进行 RTL 级结构优化}：如增加流水线、拆分长组合、改善控制结构。
+\item
+  \textbf{重新综合与实现并比较结果}：观察时序、面积、功耗是否出现新的变化。
+\item
+  \textbf{必要时再进行更细致的布局和约束调整}：例如区域约束、扇出控制和专用资源映射。
+\end{itemize}
+
+这个流程说明，优化不是``碰运气式试错''，而应建立在问题定位基础之上。只有理解问题来源，才能选择合适优化方法。
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{本章小结}\label{ux672cux7ae0ux5c0fux7ed3}
+
+本章围绕 FPGA
+设计中的常见优化问题展开讨论。首先，介绍了时序收敛的基本方法，说明建立时间、保持时间、关键路径和时钟域交叉是时序分析中的核心概念，并指出流水线和寄存器平衡是解决关键路径问题的重要手段。其次，讨论了面积优化的常见思路，包括资源共享、逻辑折叠和状态机编码选择，同时强调面积优化不能脱离时序与系统目标孤立进行。再次，本章说明了功耗分析的基本流程，并指出在
+FPGA
+中更推荐使用时钟使能而非普通逻辑门控时钟。最后，本章介绍了设计约束的基本结构与例外约束的使用原则，强调约束文件必须真实反映系统边界和时序关系。
+
+总体而言，设计优化技术的核心不在于记忆若干``技巧''，而在于建立一种工程化思维：先准确描述系统，再定位主要矛盾，最后通过结构、约束和实现手段的配合完成优化。掌握这些内容，将有助于读者从``功能实现''进一步走向``工程实现''。
+
+\section{术语表}\label{ux672fux8bedux8868}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+术语
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+英文全称
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+含义说明
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Setup Time & Setup Time &
+建立时间，数据在采样边沿前必须稳定的最小时间。 \\
+Hold Time & Hold Time &
+保持时间，数据在采样边沿后必须继续保持的最小时间。 \\
+Slack & Slack & 时序裕量，用于衡量路径满足时序要求的程度。 \\
+Critical Path & Critical Path & 关键路径，时序最紧张的路径。 \\
+CDC & Clock Domain Crossing & 时钟域交叉，信号在不同时钟域之间传递。 \\
+Pipelining & Pipelining & 流水线，将长逻辑路径拆分到多个时钟周期。 \\
+Resource Sharing & Resource Sharing &
+资源共享，多个操作复用同一硬件资源。 \\
+Clock Enable & Clock Enable &
+时钟使能，在主时钟不变的前提下控制寄存器更新。 \\
+False Path & False Path & 假路径，不参与常规时序分析的路径。 \\
+Multicycle Path & Multicycle Path &
+多周期路径，允许跨多个周期完成传输的路径。 \\
+\end{longtable}
+
+\section{习题与思考}\label{ux4e60ux9898ux4e0eux601dux8003}
+
+\begin{itemize}
+\tightlist
+\item
+  为什么建立时间和保持时间都必须满足，缺少任何一个都可能导致系统不稳定？
+\item
+  在阅读时序报告时，为什么应优先关注关键路径而不是平均路径延迟？
+\item
+  两级寄存器同步器适合解决哪类跨时钟域问题？为什么它不适合直接处理多比特总线？
+\item
+  为什么插入流水线寄存器通常能改善时序，却可能增加系统延迟？
+\item
+  资源共享为什么说是``用时间换面积''？它会带来哪些代价？
+\item
+  在 FPGA 中，为什么通常不建议直接用 \passthrough{\lstinline!clk \& en!}
+  形式生成门控时钟？
+\item
+  \passthrough{\lstinline!set\_false\_path!} 和
+  \passthrough{\lstinline!set\_multicycle\_path!}
+  分别适合描述什么情况？误用它们会带来什么风险？
+\item
+  若设计功能正确但实现后仍存在时序违例，应按照怎样的顺序进行排查与优化？
+\end{itemize}
+
+\section{课程作业：时序分析与优化方案设计}\label{ux8bfeux7a0bux4f5cux4e1aux65f6ux5e8fux5206ux6790ux4e0eux4f18ux5316ux65b9ux6848ux8bbeux8ba1}
+
+请结合本章内容，围绕一个已有 RTL
+模块或小型实验工程完成一次``问题定位与优化设计''作业。作业要求如下：
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  选择一个具体对象，例如多级组合逻辑模块、FIFO 控制路径、UART
+  数据通路或状态机控制器；
+\item
+  从时序、面积或功耗三个角度中至少选择两个作为分析重点；
+\item
+  给出当前设计可能存在的问题，例如关键路径过长、共享资源不合理、切换活动过高或约束不完整；
+\item
+  提出至少两种优化措施，例如增加流水线、调整状态机编码、引入时钟使能、补充时序约束或改用专用资源；
+\item
+  分析这些优化对频率、面积、延迟和可维护性的可能影响，说明其中的工程权衡；
+\item
+  若手头已有实验工程，可结合综合或时序报告给出更具体的观察结论；若没有，也应给出合理的定性分析过程。
+\end{enumerate}
+
+\section{作业报告要求}\label{ux4f5cux4e1aux62a5ux544aux8981ux6c42}
+
+本章作业报告应至少包含以下内容：
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  被分析模块或工程的功能简介；
+\item
+  主要问题定位依据；
+\item
+  至少两种优化方案及其实施思路；
+\item
+  对时序、面积、功耗和延迟影响的比较分析；
+\item
+  最终推荐方案与理由；
+\item
+  若引用了综合、时序或功耗报告，应附上关键结果截图或数据摘要。
+\end{enumerate}
+
+\section{阅读建议}\label{ux9605ux8bfbux5efaux8bae}
+
+建议读者在学习本章后，结合一个已有实验工程实际查看时序报告，尝试找出最差路径并分析其形成原因；同时，可将一段组合逻辑较长的
+RTL
+改写为两级流水线形式，比较优化前后的时序结果。若条件允许，还可进一步阅读目标
+FPGA 厂商关于时序约束、功耗分析和 CDC
+设计规范的官方文档，以形成更完整的工程认识。

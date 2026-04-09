@@ -1,0 +1,482 @@
+\chapter{第9讲：前沿技术专题}\label{ux7b2c9ux8bb2ux524dux6cbfux6280ux672fux4e13ux9898}
+
+经过前面几讲的学习，读者已经对 FPGA
+的基本结构、仿真验证、综合实现、接口设计、系统集成、设计优化以及调试测试形成了较完整的认识。到这一阶段，再继续学习
+FPGA 系统设计，就不能只停留在``会写
+RTL''和``会做基础实验''的层面，而应进一步关注当前工程实践中更具代表性的前沿方向。这些方向通常具有两个共同特点：一方面，它们与真实产业需求联系更紧密；另一方面，它们往往跨越了传统
+RTL 设计的单一视角，涉及算法、软件、系统平台以及开源生态的协同。
+
+本章围绕 FPGA
+领域中几个具有代表性的前沿专题展开讨论，重点介绍高层次综合（HLS）的基本思想、FPGA
+加速 AI 推理的典型方法、异构 SoC 平台中的 PS-PL 协同模式，以及开源 FPGA
+工具链的发展意义。通过本章学习，读者应能够对``未来 FPGA
+工程师会面对什么问题''形成初步认识，并理解为什么现代 FPGA
+设计正越来越强调软硬件协同、抽象层次提升和开放工具生态。
+
+\section{学习目标}\label{ux5b66ux4e60ux76eeux6807}
+
+通过本章学习，读者应达到以下目标。首先，应能够理解高层次综合的基本定位，知道它为何能够提高开发效率，同时也理解其与手写
+RTL 在性能、资源和可控性上的差异。其次，应能够认识 FPGA 在 AI
+推理中的优势与局限，理解量化、并行计算和片上缓存组织对加速效果的重要影响。再次，应能够掌握异构
+SoC
+平台中处理系统（PS）与可编程逻辑（PL）协同工作的基本模式，建立面向系统级应用的软硬件协同意识。最后，应能够了解开源
+FPGA
+工具链的组成及其教学价值，理解开源生态为何在研究、原型验证和课程实验中越来越重要。
+
+\section{引例：为什么现代 FPGA 设计越来越不像``只写
+Verilog''}\label{ux5f15ux4f8bux4e3aux4ec0ux4e48ux73b0ux4ee3-fpga-ux8bbeux8ba1ux8d8aux6765ux8d8aux4e0dux50cfux53eaux5199-verilog}
+
+很多初学者在接触 FPGA 课程时，往往会形成一种朴素印象：所谓 FPGA
+设计，就是用 Verilog 或 VHDL
+描述硬件，再通过工具生成比特流下载到板卡运行。这样的理解在入门阶段并没有问题，但若把它直接推广到现代工程实践，就会显得过于狭窄。事实上，在当前很多应用场景中，FPGA
+设计已经不再只是 RTL 编写问题，而是与 C/C++ 算法描述、AI
+模型部署、嵌入式软件控制、Linux 驱动管理以及自动化工具链紧密耦合。
+
+例如，在智能边缘设备中，一个卷积神经网络加速器可能需要先在软件中完成量化和算子拆分，再在
+FPGA 中实现核心数据通路，同时由 ARM
+处理器负责模型加载、参数配置和外设管理；在视频处理系统中，一个硬件加速模块往往不是单独运行，而是通过
+AXI 总线与
+DMA、缓存和软件控制逻辑共同协作；在原型验证和研究场景中，设计者甚至可能使用开源综合与布局布线工具完成一整套实验流程。由此可见，现代
+FPGA 工程正在从``单一 RTL 设计''走向``多层次协同设计''。
+
+因此，本章的目的并不是让读者马上掌握所有前沿技术细节，而是帮助读者建立一种更开阔的视角：FPGA
+既是硬件设计平台，也是系统创新平台。
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{高层次综合设计方法}\label{ux9ad8ux5c42ux6b21ux7efcux5408ux8bbeux8ba1ux65b9ux6cd5}
+
+高层次综合（High-Level Synthesis，HLS）是近年 FPGA
+设计中最具代表性的方向之一。它的核心思想是：不再直接从 RTL
+级别描述时序结构，而是从 C、C++ 或其他更高抽象层语言出发，由工具自动生成
+RTL 实现。
+
+\subsection{HLS 的基本定位}\label{hls-ux7684ux57faux672cux5b9aux4f4d}
+
+HLS 并不是``完全取代
+RTL''的新方法，而是一种提高设计抽象层次的工程手段。它特别适合以下类型的问题：
+
+\begin{itemize}
+\tightlist
+\item
+  算法结构清晰、数据流特征明显的计算模块；
+\item
+  需要快速迭代和验证不同结构方案的应用；
+\item
+  算法工程师与硬件工程师需要协同开发的项目；
+\item
+  对接口和并行度需要反复探索的系统原型阶段。
+\end{itemize}
+
+从工程角度看，HLS
+的优势主要体现在开发效率与可维护性上。设计者可以先用较接近软件的方式表达算法，再通过流水线、循环展开、数组分割等指令引导工具生成更适合硬件实现的结构。
+
+\subsection{HLS 与 RTL 的差异}\label{hls-ux4e0e-rtl-ux7684ux5deeux5f02}
+
+虽然 HLS 和 RTL 最终都面向硬件实现，但它们在设计出发点上存在明显不同：
+
+\begin{longtable}[]{@{}lll@{}}
+\toprule\noalign{}
+维度 & HLS & 手写 RTL \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+描述层次 & 更高，偏算法与行为 & 更低，偏时序与结构 \\
+开发效率 & 通常更高 & 通常更低，但更细致 \\
+结构控制力 & 依赖工具与约束 & 设计者可直接控制 \\
+适用场景 & 算法模块、快速迭代 & 接口控制、精细优化、复杂时序逻辑 \\
+\end{longtable}
+
+需要强调的是，HLS
+的价值并不在于``省掉硬件知识''，而在于把部分设计工作从纯手工结构组织转移到``算法描述
++
+结构约束''这一层面。若缺少对硬件并行性、访存结构和流水线的理解，单纯依赖
+HLS 也很难得到理想结果。
+
+\subsection{一个简化的 HLS
+示例}\label{ux4e00ux4e2aux7b80ux5316ux7684-hls-ux793aux4f8b}
+
+下面给出一个矩阵求和类函数的简化示意：
+
+\begin{lstlisting}[language={C++}]
+void vec_add(const int a[256], const int b[256], int c[256]) {
+    for (int i = 0; i < 256; ++i) {
+        c[i] = a[i] + b[i];
+    }
+}
+\end{lstlisting}
+
+若从软件角度看，这只是一个普通循环；但在 HLS
+视角下，设计者会进一步考虑：这个循环是否能流水化？数组访问是否会形成访存瓶颈？是否需要把某些数组分割到多个存储体中？也就是说，HLS
+仍然需要硬件思维，只是表达方式发生了变化。
+
+\subsection{使用 HLS
+时需要关注的问题}\label{ux4f7fux7528-hls-ux65f6ux9700ux8981ux5173ux6ce8ux7684ux95eeux9898}
+
+在教学和工程中，使用 HLS 时尤其应关注以下几个方面：
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{循环结构是否适合并行化}；
+\item
+  \textbf{访存是否成为吞吐瓶颈}；
+\item
+  \textbf{接口类型是否满足系统集成需求}；
+\item
+  \textbf{生成 RTL 后的资源和时序是否仍可接受}。
+\end{itemize}
+
+因此，更合理的学习方式不是把 HLS
+当作``自动生成硬件的黑盒''，而是把它看作一种新的设计入口。设计者仍然需要理解最终硬件是如何形成的，才能真正发挥其优势。
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{FPGA 加速 AI 推理}\label{fpga-ux52a0ux901f-ai-ux63a8ux7406}
+
+人工智能应用的发展，使 FPGA
+在边缘计算和专用加速器领域重新受到广泛关注。与 CPU 和 GPU 相比，FPGA
+并不一定在所有场景下都占优，但在低延迟、可定制数据通路和能效比要求较高的任务中，往往具有独特价值。
+
+\subsection{为什么 FPGA 适合部分 AI
+推理任务}\label{ux4e3aux4ec0ux4e48-fpga-ux9002ux5408ux90e8ux5206-ai-ux63a8ux7406ux4efbux52a1}
+
+AI
+推理的核心通常是大量重复的矩阵或卷积运算，这些计算天然具有较高并行性。FPGA
+的优势主要体现在以下几个方面：
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{可定制数据通路}：可以针对具体网络结构组织并行计算；
+\item
+  \textbf{片上缓存可控}：便于减少外部存储访问延迟；
+\item
+  \textbf{低延迟处理}：适合对响应时间敏感的边缘设备；
+\item
+  \textbf{较好的能效表现}：在某些中小规模推理场景下更具吸引力。
+\end{itemize}
+
+但与此同时，FPGA 也面临开发复杂度高、工具链较重、算子生态不如 GPU
+完整等问题。因此，是否采用
+FPGA，并不只取决于``算得快不快''，还取决于应用场景是否真的需要这种可定制性。
+
+\subsection{量化与硬件友好设计}\label{ux91cfux5316ux4e0eux786cux4ef6ux53cbux597dux8bbeux8ba1}
+
+在 FPGA 上部署 AI
+推理时，一个非常重要的概念是量化。很多神经网络训练时使用浮点数，但在推理部署阶段，常会转换为
+INT8、INT16 等更适合硬件实现的定点格式。这样做的主要好处包括：
+
+\begin{itemize}
+\tightlist
+\item
+  降低乘加单元复杂度；
+\item
+  提高并行度；
+\item
+  减少存储带宽压力；
+\item
+  缩小参数与中间结果占用空间。
+\end{itemize}
+
+下面给出一个简化的量化乘法示意：
+
+\begin{lstlisting}[language=Verilog]
+module quant_mul #(
+    parameter BIT_WIDTH = 8
+)(
+    input  signed [BIT_WIDTH-1:0] a,
+    input  signed [BIT_WIDTH-1:0] b,
+    output signed [2*BIT_WIDTH-1:0] p
+);
+    assign p = a * b;
+endmodule
+\end{lstlisting}
+
+这个例子本身并不复杂，但它揭示了 AI
+加速器设计中的核心问题：真正困难的部分并不在单个乘法器，而在于如何组织大量乘法、累加、缓存和数据搬运，使整个网络层能够持续流动起来。
+
+\subsection{AI
+推理加速中的工程难点}\label{ai-ux63a8ux7406ux52a0ux901fux4e2dux7684ux5de5ux7a0bux96beux70b9}
+
+在教学中，讨论 FPGA 加速 AI
+时，不能只强调``能加速''，还必须指出其工程难点：
+
+\begin{itemize}
+\tightlist
+\item
+  片上存储容量有限，参数与特征图调度困难；
+\item
+  不同网络层结构差异大，复用统一硬件并不总是容易；
+\item
+  数据搬运与计算常常同等重要；
+\item
+  模型精度与硬件资源之间需要权衡。
+\end{itemize}
+
+因此，对初学者而言，更现实的目标通常不是自己实现完整神经网络加速器，而是理解``为什么量化、并行度和缓存组织对
+FPGA 尤其重要''。
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{异构 SoC 与 PS-PL
+协同}\label{ux5f02ux6784-soc-ux4e0e-ps-pl-ux534fux540c}
+
+现代 FPGA
+平台中，一个重要趋势是把处理器系统与可编程逻辑放在同一芯片中，形成异构
+SoC 架构。典型代表包括 Zynq、Zynq UltraScale+ MPSoC 等。这类平台通常把
+ARM 处理器子系统（Processing System，PS）与可编程逻辑（Programmable
+Logic，PL）结合起来，使软件控制和硬件加速能够在统一平台上协同完成。
+
+\subsection{PS 与 PL
+各自负责什么}\label{ps-ux4e0e-pl-ux5404ux81eaux8d1fux8d23ux4ec0ux4e48}
+
+在这类平台中，PS 和 PL 并不是简单重复功能，而是分工明确：
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{PS} 更适合操作系统、驱动、控制逻辑、协议栈和任务调度；
+\item
+  \textbf{PL} 更适合高吞吐、强并行、低延迟的数据通路计算。
+\end{itemize}
+
+这种分工体现了一种更现代的系统设计思路：不是把所有问题都做成硬件，也不是把所有问题都留给软件，而是根据任务特点做最合适的划分。
+
+\subsection{常见协同模式}\label{ux5e38ux89c1ux534fux540cux6a21ux5f0f}
+
+在教学和工程中，PS-PL 协同常见的工作方式包括：
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  由 PS 完成系统启动、配置和外设管理；
+\item
+  由 PS 通过寄存器或总线向 PL 下发控制参数；
+\item
+  由 PL 作为加速器完成核心计算任务；
+\item
+  由 DMA 或共享内存机制完成大规模数据交换；
+\item
+  最终由 PS 汇总结果并与外部软件系统交互。
+\end{enumerate}
+
+例如，在视频处理场景中，PS
+可以负责摄像头初始化、缓冲区管理和显示控制，而 PL
+负责图像滤波、边缘检测或特征提取。这样的结构比``全软件''或``全硬件''都更灵活。
+
+\subsection{开发方式的变化}\label{ux5f00ux53d1ux65b9ux5f0fux7684ux53d8ux5316}
+
+异构 SoC 的出现，也让 FPGA 开发方式发生了明显变化。设计者不仅要会写
+RTL，还要理解：
+
+\begin{itemize}
+\tightlist
+\item
+  寄存器映射如何与软件驱动配合；
+\item
+  硬件加速器如何接入总线；
+\item
+  Linux 或裸机程序如何控制 PL 模块；
+\item
+  数据搬运和缓存一致性如何影响整体性能。
+\end{itemize}
+
+这说明现代 FPGA 开发越来越接近``系统工程''，而不再只是单一逻辑设计问题。
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{开源 FPGA
+工具链与开放生态}\label{ux5f00ux6e90-fpga-ux5de5ux5177ux94feux4e0eux5f00ux653eux751fux6001}
+
+除了商业工具链之外，开源 FPGA
+生态也在快速发展。它并不一定完全替代商业平台，但在教学、研究、自动化实验和新器件支持等方面已经展现出很高价值。
+
+\subsection{开源工具链的基本组成}\label{ux5f00ux6e90ux5de5ux5177ux94feux7684ux57faux672cux7ec4ux6210}
+
+一个典型的开源 FPGA 流程通常包括：
+
+\begin{itemize}
+\tightlist
+\item
+  使用 Yosys 进行逻辑综合；
+\item
+  使用 nextpnr 进行布局布线；
+\item
+  使用器件相关工具生成配置文件或比特流。
+\end{itemize}
+
+例如：
+
+\begin{lstlisting}[language=tcl]
+read_verilog -sv design.sv
+synth_xilinx -family xc7
+write_edif design.edif
+\end{lstlisting}
+
+上述命令体现的是综合阶段。后续还需要器件相关的布局布线与配置步骤，才能形成完整实现流程。
+
+\subsection{为什么开源工具链有教学价值}\label{ux4e3aux4ec0ux4e48ux5f00ux6e90ux5de5ux5177ux94feux6709ux6559ux5b66ux4ef7ux503c}
+
+开源工具链的价值不仅在于``免费可用''，更在于它让设计流程变得可观察、可脚本化、可拆解。对教学而言，这有几个明显优势：
+
+\begin{itemize}
+\tightlist
+\item
+  学生更容易看清每一步在做什么；
+\item
+  便于搭建自动化实验与批处理环境；
+\item
+  更适合研究工具流程本身的原理；
+\item
+  有助于形成开放、可重复的实验方法。
+\end{itemize}
+
+当然，也要看到开源工具链并不意味着毫无门槛。其器件覆盖、文档完整度、图形界面友好性和商业支持程度，通常与成熟商业工具仍有差距。因此，更合理的认识是：开源工具链非常适合作为教学和研究平台，但在工业量产场景中仍需结合实际器件与工程要求选择。
+
+\subsection{前沿方向背后的共同趋势}\label{ux524dux6cbfux65b9ux5411ux80ccux540eux7684ux5171ux540cux8d8bux52bf}
+
+无论是 HLS、AI 加速、异构 SoC
+还是开源工具链，它们背后其实都指向同一个趋势：FPGA
+正在从``可编程逻辑器件''进一步演化为``可定制计算平台''。这种变化要求设计者不再只关心单个
+HDL
+文件是否正确，而是要同时关注算法、系统架构、软件控制、工具流程与工程效率。
+
+对于本科阶段的学习而言，最重要的并不是立刻掌握所有先进工具，而是建立这样的认识：未来的
+FPGA 工程能力，必须建立在坚实 RTL
+基础之上，同时向更高层次的系统设计能力延伸。
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{本章小结}\label{ux672cux7ae0ux5c0fux7ed3}
+
+本章围绕 FPGA
+领域中的几个前沿专题展开讨论。首先，介绍了高层次综合的基本思想，说明 HLS
+通过提高设计抽象层次来改善开发效率，但其有效使用仍然依赖对并行结构、访存组织和硬件约束的理解。其次，本章讨论了
+FPGA 在 AI
+推理中的典型应用，强调量化、片上缓存和并行数据通路对加速效果的重要影响。再次，本章介绍了异构
+SoC 平台中 PS 与 PL 的协同关系，指出现代 FPGA
+开发正越来越强调软硬件协同与系统级集成。最后，本章讨论了开源 FPGA
+工具链的组成及其教学价值，说明开放生态正在改变人们理解和使用 FPGA
+的方式。
+
+总体而言，本章的重点不在于让读者立即掌握所有前沿技术细节，而在于帮助读者理解
+FPGA
+设计正在发生怎样的变化。掌握这种趋势判断能力，有助于读者在后续课程设计、科研训练和工程实践中更有方向感地选择学习重点。
+
+\section{术语表}\label{ux672fux8bedux8868}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+术语
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+英文全称
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+含义说明
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+HLS & High-Level Synthesis & 高层次综合，从 C/C++ 等高抽象层描述生成 RTL
+的方法。 \\
+Pipeline & Pipeline & 流水线，把运算分散到多个阶段并重叠执行的方法。 \\
+Quantization & Quantization &
+量化，将浮点或高精度数值转换为更适合硬件实现的低精度表示。 \\
+PS & Processing System & 异构 SoC 中的处理系统部分，通常包含 CPU
+与软件运行环境。 \\
+PL & Programmable Logic & 异构 SoC
+中的可编程逻辑部分，用于实现定制硬件加速器。 \\
+DMA & Direct Memory Access &
+直接存储器访问，用于在模块间高效搬运数据。 \\
+MPSoC & Multiprocessor System on Chip &
+多处理器片上系统，一类集成多个处理核心的 SoC 结构。 \\
+Yosys & Yosys & 开源逻辑综合工具。 \\
+nextpnr & nextpnr & 面向 FPGA 的开源布局布线工具。 \\
+Edge AI & Edge AI &
+边缘人工智能，指在边缘设备上部署推理或智能处理能力。 \\
+\end{longtable}
+
+\section{习题与思考}\label{ux4e60ux9898ux4e0eux601dux8003}
+
+\begin{itemize}
+\tightlist
+\item
+  为什么说 HLS 提高了设计抽象层次，但并没有让设计者摆脱硬件思维？
+\item
+  在 FPGA 上部署 AI 推理时，为什么量化通常是一个关键步骤？
+\item
+  PS-PL 协同设计与传统``纯 RTL
+  模块设计''相比，思维方式上有哪些主要变化？
+\item
+  为什么现代 FPGA
+  工程越来越强调数据搬运和缓存组织，而不只是计算单元本身？
+\item
+  开源 FPGA
+  工具链为什么特别适合教学与研究场景？它与商业工具链相比有哪些优势和局限？
+\item
+  如果你要为一个边缘视觉系统选择实现平台，哪些部分适合放在 PS
+  上，哪些部分适合放在 PL 上？请说明理由。
+\end{itemize}
+
+\section{课程作业：前沿专题选题分析}\label{ux8bfeux7a0bux4f5cux4e1aux524dux6cbfux4e13ux9898ux9009ux9898ux5206ux6790}
+
+请从本章四个方向中任选一个专题完成课程作业：高层次综合、AI
+推理加速、异构 SoC 协同或开源 FPGA 工具链。作业要求如下：
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  明确所选专题的应用背景与工程价值；
+\item
+  结合本课程已学内容，说明该专题与 RTL
+  设计、接口设计、系统集成或验证方法之间的联系；
+\item
+  对所选专题给出一个简化实现方案或系统框图；
+\item
+  若选择 HLS 方向，应说明算法描述、并行化和接口约束的基本思路；
+\item
+  若选择 AI 推理方向，应说明量化、缓存组织和数据通路设计为何重要；
+\item
+  若选择异构 SoC 方向，应说明 PS 与 PL 的分工以及数据交换方式；
+\item
+  若选择开源工具链方向，应说明从综合到布局布线的大致流程，以及它适合哪类实验或研究任务；
+\item
+  最后用不超过 400
+  字总结：如果继续深入该专题，你认为自己最需要补足的知识是什么。
+\end{enumerate}
+
+\section{作业报告要求}\label{ux4f5cux4e1aux62a5ux544aux8981ux6c42}
+
+本章作业报告应至少包含以下内容：
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  选题名称与专题背景；
+\item
+  相关技术概念说明；
+\item
+  简化系统框图、流程图或功能结构图；
+\item
+  所选方向的核心工程难点分析；
+\item
+  与本课程前几章知识点的联系总结；
+\item
+  个人收获与后续学习计划。
+\end{enumerate}
+
+\section{阅读建议}\label{ux9605ux8bfbux5efaux8bae}
+
+建议读者在学习本章后，不必急于同时深入所有前沿方向，而应先根据自己的兴趣和基础选择一个专题持续跟进。若偏重算法与加速器设计，可先从
+HLS 与量化推理入手；若偏重系统平台开发，可先从 PS-PL
+协同与驱动控制入手；若偏重工具与方法研究，则可继续深入开源 FPGA
+工具链的综合、布局布线和自动化流程。通过``选一个方向深入、其余方向建立概念框架''的学习方式，通常更适合本科阶段的课程拓展。

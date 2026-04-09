@@ -27,3 +27,6 @@ src/.vuepress/dist/
 */*/impl1/*
 */*/*.dir/*
 .history/
+latex/generated-markdown/
+latex/generated-mermaid/
+latex/chapters/generated-mermaid/
