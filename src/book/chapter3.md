@@ -1,5 +1,5 @@
 ---
-title: "第3讲：开源 Verilog 仿真工具与基本使用"
+title: "第3讲：开源 Verilog 仿真工具"
 author: [周贤中]
 date: 2025-03-30
 subject: "Markdown"
