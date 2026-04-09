@@ -10,7 +10,6 @@ export default sidebar({
       collapsible: true,
       children: [
         "README.md",
-        "chapter0.md",
         "chapter1.md",
         "chapter2.md",
         "chapter3.md",
@@ -18,7 +17,8 @@ export default sidebar({
         "chapter5.md", 
         "chapter6.md",
         "chapter7.md",
-        "chapter8.md"
+        "chapter8.md",
+        "chapter9.md"
       ]
     },
     {

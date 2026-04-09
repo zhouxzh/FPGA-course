@@ -46,22 +46,22 @@ highlights:
     features:
       - title: 数字电路基础
         icon: microchip
-        # link: ./book/chapter1.md
+        # link: ./book/chapter2.md
         details: Verilog HDL与RTL设计方法
         
       - title: FPGA开发实战
         icon: code
-        # link: ./book/chapter2.md
+        # link: ./book/chapter3.md
         details: Vivado工具链与IP核应用
         
       - title: 系统集成设计
         icon: puzzle-piece
-        # link: ./book/chapter5.md
+        # link: ./book/chapter6.md
         details: 基于AXI总线的SOC设计
         
       - title: 前沿技术拓展
         icon: rocket
-        # link: ./book/chapter8.md
+        # link: ./book/chapter9.md
         details: 高速串行接口与部分重构技术
 
   # - header: 实验环境
@@ -85,12 +85,12 @@ highlights:
   #   features:
   #     - title: 在线课件
   #       icon: file-pdf
-  #       link: ./book/chapter1.md#课件下载
+  #       link: ./book/chapter2.md#课件下载
   #       details: 提供PDF/PPT双语版本
         
   #     - title: 视频教程
   #       icon: video
-  #       link: ./book/chapter2.md#视频资源
+  #       link: ./book/chapter3.md#视频资源
   #       details: 关键操作步骤演示录像
         
   #     - title: 代码仓库
