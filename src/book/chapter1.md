@@ -1,5 +1,5 @@
 ---
-title: "第1讲：绪论"
+title: "第1讲：FPGA 系统设计概述"
 author: [周贤中]
 date: 2025-03-30
 subject: "Markdown"
