@@ -24,6 +24,7 @@ src/.vuepress/dist/
 *.ncd
 *.rpt
 *.vcd
+*.vvp
 */*/impl1/*
 */*/*.dir/*
 .history/
