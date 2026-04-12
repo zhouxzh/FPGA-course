@@ -1,0 +1,4 @@
+read_verilog cpu.v
+hierarchy -top cpu
+proc; opt; fsm; opt; memory; opt;
+show -prefix cpu

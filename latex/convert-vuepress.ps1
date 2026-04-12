@@ -53,16 +53,16 @@ function Convert-MermaidBlocks {
 	)
 
 	$content = [System.IO.File]::ReadAllText((Resolve-Path $SourcePath), $utf8)
-	$diagramIndex = 0
-	$pattern = '(?ms)^[ \t]*```mermaid[^\r\n]*\r?\n(.*?)^[ \t]*```[ \t]*\r?\n?'
+	$diagramIndex = [ref]0
+	$pattern = '(?ms)^[ \t]*```mermaid[^\r\n]*\r?\n(?<Diagram>.*?)^[ \t]*```[ \t]*\r?\n?'
 	$rewritten = [regex]::Replace($content, $pattern, {
 		param($match)
 
-		$diagramIndex += 1
-		$diagramName = '{0}-mermaid-{1}' -f $Stem, $diagramIndex
+		$diagramIndex.Value += 1
+		$diagramName = '{0}-mermaid-{1}' -f $Stem, $diagramIndex.Value
 		$diagramSourcePath = Join-Path $generatedMermaidDir ($diagramName + '.mmd')
 		$diagramImagePath = Join-Path $generatedMermaidDir ($diagramName + '.png')
-		$diagramCode = $match.Groups[1].Value.TrimEnd("`r", "`n") + [Environment]::NewLine
+		$diagramCode = $match.Groups['Diagram'].Value.TrimEnd("`r", "`n") + [Environment]::NewLine
 
 		[System.IO.File]::WriteAllText($diagramSourcePath, $diagramCode, $utf8)
 		Invoke-CommandOrThrow 'pnpm' @('exec', 'mmdc', '-q', '-i', $diagramSourcePath, '-o', $diagramImagePath)
@@ -99,6 +99,11 @@ foreach ($job in $documentJobs) {
 
 Get-ChildItem chapters/chapter*.tex | ForEach-Object {
 	$content = [System.IO.File]::ReadAllText($_.FullName, $utf8)
+	$content = [regex]::Replace(
+		$content,
+		'\\pandocbounded\{\\includegraphics\[keepaspectratio,alt=\{Mermaid Diagram\}\]\{([^}]+generated-mermaid/[^}]+)\}\}',
+		'\pandocbounded{\includegraphics[width=\linewidth,height=0.82\textheight,keepaspectratio,alt={Mermaid Diagram}]{$1}}'
+	)
 	$content = [regex]::Replace($content, '(\\pandocbounded\{.*?\})(\\\\)(\r?\n)', '$1$3')
 	[System.IO.File]::WriteAllText($_.FullName, $content, $utf8)
 }

@@ -1,0 +1,227 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+\usepackage[UTF8]{ctex}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\usetheme{default}
+\usecolortheme{default}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+
+\title{第5讲：FPGA数字接口设计}
+\author{周贤中}
+\date{2025-03-30}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue!70!black},
+  commentstyle=\color{green!40!black},
+  stringstyle=\color{orange!60!black},
+  showstringspaces=false,
+  breaklines=true,
+  columns=fullflexible
+}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{本讲学习目标}
+  \begin{itemize}
+    \item 理解 UART、SPI、I\textsuperscript{2}C 在时钟组织、拓扑结构和应用场景上的差异
+    \item 掌握 UART 发送器、接收器和回环验证的基本设计思路
+    \item 建立对 LVDS 与 HDMI/TMDS 的分层认识，区分协议层与物理层
+    \item 能根据系统需求完成接口初步选型，并说明工程上的取舍理由
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{引入问题：为什么同样是串行通信，设计方法却不同}
+  \begin{block}{典型场景}
+    与上位机调试常用 UART；与 Flash、ADC 通信常用 SPI；与传感器配置常用 I\textsuperscript{2}C。
+  \end{block}
+  \vspace{0.5em}
+  \begin{itemize}
+    \item UART 是异步接口，没有专用时钟线，重点在波特率和采样时刻
+    \item SPI 是同步接口，重点在时钟边沿、片选与全双工移位
+    \item I\textsuperscript{2}C 是共享总线，重点在地址、应答和双向总线控制
+  \end{itemize}
+  \vspace{0.5em}
+  本章关注的不是“接口名字”，而是接口结构如何决定 HDL 设计方法。
+\end{frame}
+
+\begin{frame}{数字接口设计的共性问题}
+  \begin{enumerate}
+    \item 时序是否正确：发送、采样、应答是否落在正确时刻
+    \item 位宽是否匹配：帧格式、字节边界和符号组织是否清楚
+    \item 方向控制是否明确：单向、双向、主从关系是否清晰
+    \item 物理层是否可靠：单端还是差分、板级约束是否满足要求
+  \end{enumerate}
+  \vspace{0.5em}
+  这四个问题会在 UART、SPI、I\textsuperscript{2}C、LVDS 和 HDMI 中反复出现。
+\end{frame}
+
+\begin{frame}{UART：最适合入门的异步串行接口}
+  \begin{columns}[T]
+    \column{0.58\textwidth}
+    \begin{itemize}
+      \item 空闲为高电平，典型帧格式为 1 个起始位、8 个数据位、1 个停止位
+      \item 不传送独立时钟，因此通信双方必须预先约定波特率
+      \item 发送器重点是位时间生成，接收器重点是中点采样
+      \item 常用于调试串口、日志输出、简单上位机交互
+    \end{itemize}
+    \column{0.42\textwidth}
+    \includegraphics[width=\textwidth,height=0.55\textheight,keepaspectratio]{../../src/book/img5/UART.jpeg}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{UART 发送器：状态机组织帧格式}
+  \begin{itemize}
+    \item IDLE：等待发送请求，串行线保持高电平
+    \item START：输出起始位 0
+    \item DATA：按低位优先顺序逐位发送 8 位数据
+    \item STOP：输出停止位 1，并产生发送完成标志
+  \end{itemize}
+  \vspace{0.5em}
+  \begin{lstlisting}[language=Verilog]
+case (state)
+  S_IDLE:  if (tx_start) state <= S_START;
+  S_START: if (bit_tick) state <= S_DATA;
+  S_DATA:  if (bit_tick && bit_last) state <= S_STOP;
+  S_STOP:  if (bit_tick) state <= S_IDLE;
+endcase
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}{UART 接收器：为什么要在比特中心采样}
+  \begin{itemize}
+    \item 先检测起始位下降沿，再等待半个比特周期进行确认
+    \item 后续每隔一个完整比特周期采样一次，尽量避开边沿附近抖动
+    \item 停止位检查通过后，再输出有效数据标志
+  \end{itemize}
+  \vspace{0.6em}
+  \begin{block}{教学重点}
+    接收器比发送器更能体现接口验证思维，因为它直接面对“何时采样才可信”的问题。
+  \end{block}
+\end{frame}
+
+\begin{frame}{UART 回环验证与仓库示例}
+  \begin{itemize}
+    \item 教材中的 UART 示例对应仓库目录：\texttt{verilog/chapter5/uart}
+    \item 该目录包含 \texttt{tx.v}、\texttt{rx.v}、\texttt{uart\_tb.v} 和 \texttt{Makefile}
+    \item 仿真工具 \texttt{iverilog}、\texttt{vvp}、\texttt{gtkwave} 安装在 WSL 中，相关命令应在 WSL 内执行
+  \end{itemize}
+  \vspace{0.5em}
+  \begin{block}{推荐流程}
+    进入 \texttt{verilog/chapter5/uart} 后执行 \texttt{make}，再用 \texttt{make wave} 观察波形；必要时先执行 \texttt{make clean}。
+  \end{block}
+\end{frame}
+
+\begin{frame}{SPI：同步、全双工、主从清晰}
+  \begin{columns}[T]
+    \column{0.58\textwidth}
+    \begin{itemize}
+      \item 典型信号为 SCLK、MOSI、MISO、SS/CS
+      \item 由主设备产生时钟并发起通信
+      \item 发送与接收可在同一时刻进行
+      \item 设计难点在时钟边沿、片选包围关系和模式匹配
+    \end{itemize}
+    \column{0.42\textwidth}
+    \includegraphics[width=\textwidth,height=0.5\textheight,keepaspectratio]{../../src/book/img5/SPI.jpeg}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{SPI 四种时序模式}
+  \begin{center}
+    \begin{tabular}{cccl}
+      \toprule
+      模式 & CPOL & CPHA & 数据采样边沿 \\
+      \midrule
+      0 & 0 & 0 & 上升沿 \\
+      1 & 0 & 1 & 下降沿 \\
+      2 & 1 & 0 & 下降沿 \\
+      3 & 1 & 1 & 上升沿 \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+  \vspace{0.6em}
+  讲授时要强调：主从双方必须使用相同模式，否则即使“会移位”，采样结果也会错误。
+\end{frame}
+
+\begin{frame}{SPI：从单模块理解到联合验证}
+  \begin{columns}[T]
+    \column{0.58\textwidth}
+    \begin{itemize}
+      \item 教材示例按“先主机、再从机、最后联合仿真”的顺序组织
+      \item 主机页重点看：谁产生时钟、谁控制片选、谁决定一帧的起止
+      \item 从机页重点看：如何跟随时钟采样 MOSI，并在另一边沿准备 MISO
+      \item 联合波形重点观察：\texttt{cs\_n} 是否完整包围 8 位传输，\texttt{mosi}/\texttt{miso} 是否与时钟边沿匹配
+      \item 选用 \texttt{A5}、\texttt{96}、\texttt{3C} 等数据，是为了让波形上的高低变化更容易辨认
+    \end{itemize}
+    \column{0.42\textwidth}
+    \includegraphics[width=\textwidth,height=0.45\textheight,keepaspectratio]{../../src/book/img5/spi_tb.png}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{I\textsuperscript{2}C：共享总线与应答机制}
+  \begin{itemize}
+    \item 只用 SCL 和 SDA 两根线，但 SDA 是双向信号
+    \item 总线通常采用开漏输出并配合上拉电阻
+    \item 协议关键动作包括起始、地址、应答、数据和停止
+    \item 设计难点不只是移位，而是总线方向控制和协议状态组织
+  \end{itemize}
+  \vspace{0.5em}
+  \includegraphics[width=0.55\textwidth,height=0.3\textheight,keepaspectratio]{../../src/book/img5/I2C.jpeg}
+\end{frame}
+
+\begin{frame}{I\textsuperscript{2}C：主从协同与波形观察重点}
+  \begin{columns}[T]
+    \column{0.56\textwidth}
+    \begin{itemize}
+      \item 教材示例实现的是“主机向从机写入 1 个字节”的最小事务
+      \item 观察顺序应为：起始条件、地址阶段、地址 ACK、数据阶段、数据 ACK、停止条件
+      \item 波形里要特别注意 SDA 既可能由主机驱动，也可能在 ACK 时由从机拉低
+      \item 示例中地址取 \texttt{42}、数据取 \texttt{A6}，目的是让地址位和数据位都更容易在波形上辨认
+      \item 验证时可结合 \texttt{ack\_error}、\texttt{addr\_match}、\texttt{rx\_done}、\texttt{done} 判断事务是否完整成功
+    \end{itemize}
+    \column{0.44\textwidth}
+    \includegraphics[width=\textwidth,height=0.42\textheight,keepaspectratio]{../../src/book/img5/I2C_tb.png}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{LVDS 与 HDMI/TMDS：从低速控制走向高速互连}
+  \begin{block}{LVDS}
+    一种差分物理层标准，强调低摆幅、低辐射和高抗干扰能力，常见于高速板级互连。
+  \end{block}
+  \begin{block}{HDMI/TMDS}
+    HDMI 是系统级视频接口，TMDS 是其核心编码与差分传输机制，重点不再是简单状态机，而是视频时序、编码和高速串行化。
+  \end{block}
+  \vspace{0.5em}
+  教学上要帮助学生区分“接口协议”和“物理层标准”这两个层次。
+\end{frame}
+
+\begin{frame}{接口选型：按应用场景而不是按熟悉程度}
+  \begin{itemize}
+    \item UART：调试、日志、低速控制
+    \item SPI：高速、点对点、主从明确的芯片间通信
+    \item I\textsuperscript{2}C：低速配置、多器件共享总线
+    \item LVDS：高速差分数据与时钟传输
+    \item HDMI/TMDS：视频输出与显示系统
+  \end{itemize}
+  \vspace{0.5em}
+  选型时至少考虑速率、距离、抗干扰、资源开销和板级约束。
+\end{frame}
+
+\begin{frame}{本章小结}
+  \begin{itemize}
+    \item 串行接口虽然都按位传输，但设计重点由协议结构决定
+    \item UART 适合讲清状态机、位时间和采样机制
+    \item SPI 与 I\textsuperscript{2}C 更能训练同步时序与总线控制思维
+    \item LVDS 与 HDMI/TMDS 体现了接口设计向高速系统集成的扩展
+  \end{itemize}
+\end{frame}
+
+\end{document}
