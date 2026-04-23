@@ -276,7 +276,7 @@
     制造成本高。
   \item
     速度性能较差，因为可编程逻辑平面难以制造且引入了显著的传播延迟。
-  \end{itemize}
+\end{itemize}
 \end{itemize}
 \end{block}
 \end{frame}
@@ -411,8 +411,14 @@
     优势:
   \end{itemize}
 \end{enumerate}
+\end{block}
+\end{frame}
 
-\pandocbounded{\includegraphics[keepaspectratio]{img1/FPGA.jpeg}}
+\begin{frame}
+\begin{block}{可编程门阵列（FPGAs）}
+\centering
+\includegraphics[width=0.88\linewidth,height=0.68\textheight,keepaspectratio]{img1/FPGA.jpeg}
+
 \textbf{图2：} \emph{FPGA结构图.}
 \end{block}
 \end{frame}
@@ -487,7 +493,7 @@
 \item
   由 \textbf{Actel} 公司开发，该公司后被 \textbf{Microsemi} 公司收购，而
   \textbf{Microsemi} 公司又被 \textbf{Microchip}
-  公司收购。\pandocbounded{\includegraphics[keepaspectratio]{img1/antifuse.jpeg}}
+  公司收购。
 \end{itemize}
 \end{block}
 
@@ -503,6 +509,15 @@
   适用于FPGA，可通过改进的CMOS技术实现。
 \end{itemize}
 \end{block}
+\end{block}
+\end{frame}
+
+\begin{frame}{可编程逻辑器件典型工艺}
+\begin{block}{反熔丝技术示意图}
+\centering
+\includegraphics[width=0.88\linewidth,height=0.68\textheight,keepaspectratio]{img1/antifuse.jpeg}
+
+\textbf{图：} Actel 反熔丝结构示意图
 \end{block}
 \end{frame}
 
@@ -586,6 +601,14 @@
       提供高度灵活、高度精细的架构（如小的逻辑块）。
     \end{itemize}
   \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{PLICE反熔丝的特性与应用（续）}
+\begin{itemize}
+\tightlist
 \item
   \textbf{一次性编程特性}:
 
@@ -652,12 +675,13 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
 \item
   EEPROM 器件的工作方式与此类似。
 \end{itemize}
+\end{block}
+\end{frame}
 
-\begin{figure}
+\begin{frame}
+\begin{block}{PROM、EPROM和EEPROM工艺}
 \centering
-\pandocbounded{\includegraphics[keepaspectratio]{img1/EPROM.jpeg}}
-\caption{EPROM Programmable Switches}
-\end{figure}
+\includegraphics[width=0.88\linewidth,height=0.68\textheight,keepaspectratio]{img1/EPROM.jpeg}
 
 \textbf{图3：} \emph{EPROM可编程开关结构图.}
 \end{block}
@@ -692,15 +716,11 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
     用于控制多路复用器（multiplexer）的选择线，从而驱动逻辑块输入。
   \end{itemize}
 \end{itemize}
+\end{block}
+\end{frame}
 
-\begin{figure}
-\centering
-\pandocbounded{\includegraphics[keepaspectratio]{img1/SRAM.jpeg}}
-\caption{SRAM-controlled Programmable Switches}
-\end{figure}
-
-\textbf{图4：} \emph{SRAM可编程开关.}
-
+\begin{frame}
+\begin{block}{SRAM（续）}
 \begin{itemize}
 \tightlist
 \item
@@ -722,6 +742,14 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
     FPGA
     是否使用传输晶体管、多路复用器或两者结合，取决于具体产品的设计。
   \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{SRAM（续）}
+\begin{itemize}
+\tightlist
 \item
   只读存储器（Read Only
   Memory，ROM）采用掩膜工艺，它属于非易失性存储器。
@@ -737,6 +765,15 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
     1，每个行列的交叉有一个关联晶体管和一个掩膜连接。
   \end{itemize}
 \end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{SRAM}
+\centering
+\includegraphics[width=0.88\linewidth,height=0.68\textheight,keepaspectratio]{img1/SRAM.jpeg}
+
+\textbf{图4：} \emph{SRAM可编程开关.}
 \end{block}
 \end{frame}
 
@@ -954,6 +991,14 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
   \item
     \textbf{技术}: EECMOS
   \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{可编程逻辑器件工艺总结（续）}
+\begin{itemize}
+\tightlist
 \item
   \textbf{SRAM}:
 
@@ -966,6 +1011,14 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
   \item
     \textbf{技术}: CMOS
   \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{可编程逻辑器件工艺总结（续）}
+\begin{itemize}
+\tightlist
 \item
   \textbf{反熔丝 (Antifuse)}:
 
@@ -1039,6 +1092,7 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
 \begin{block}{\textbf{Altera CPLDs}}
 \phantomsection\label{altera-cplds}
 \begin{itemize}
+\tightlist
 \item
   \textbf{产品系列}:
 
@@ -1074,13 +1128,21 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
       与 MAX 7000 类似，但提供更高的逻辑容量（业界最高）。
     \end{itemize}
   \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{Altera CPLDs}（续）}
+\begin{itemize}
+\tightlist
 \item
   \textbf{MAX 7000 系列架构}:
 
   \begin{itemize}
   \tightlist
   \item
-    如图8所示，由以下部分组成：
+    由以下部分组成：
 
     \begin{itemize}
     \tightlist
@@ -1106,30 +1168,41 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
       1996 年，Altera 发布了 7000S 系列，支持``电路内''可重复编程。
     \end{itemize}
   \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{Altera CPLDs}（续）}
+\begin{itemize}
+\tightlist
 \item
   \textbf{LAB 结构}:
+\end{itemize}
 
-  \begin{figure}
-  \centering
-  \pandocbounded{\includegraphics[keepaspectratio]{img1/MAX7000.jpeg}}
-  \caption{Altera MAX 7000}
-  \end{figure}
+\centering
+\includegraphics[width=0.84\linewidth,height=0.56\textheight,keepaspectratio]{img1/MAX7000.jpeg}
 
-  \textbf{图5：} \emph{Altera MAX7000的逻辑阵列模块（Logic Array
-  Block，LAB).}
+\textbf{图5：} \emph{Altera MAX7000的逻辑阵列模块（Logic Array Block，LAB).}
+\end{block}
+\end{frame}
 
-  \begin{figure}
-  \centering
-  \pandocbounded{\includegraphics[keepaspectratio]{img1/MAX7000Macrocell.jpeg}}
-  \caption{MAX 7000 Macrocell}
-  \end{figure}
+\begin{frame}
+\begin{block}{\textbf{Altera CPLDs}（续）}
+\centering
+\includegraphics[width=0.72\linewidth,height=0.38\textheight,keepaspectratio]{img1/MAX7000Macrocell.jpeg}
 
-  \textbf{图6：} \emph{MAX7000宏单元.}
+\textbf{图6：} \emph{MAX7000宏单元.}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{LAB 结构细节}:
 
   \begin{itemize}
   \tightlist
   \item
-    如图5所示，每个 LAB 由两组八个\textbf{宏单元}组成（如图10所示）。
+    如图5所示，每个 LAB 由两组八个\textbf{宏单元}组成。
   \item
     \textbf{宏单元}:
 
@@ -1154,7 +1227,9 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
   \end{itemize}
 \end{itemize}
 \end{block}
+\end{frame}
 
+\begin{frame}
 \begin{block}{\textbf{AMD Mach 系列 CPLD}}
 \phantomsection\label{amd-mach-ux7cfbux5217-cpld}
 \begin{itemize}
@@ -1187,13 +1262,21 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
     \textbf{讨论重点}: Mach 4 系列，因为它代表了 Mach
     家族中最先进的产品。
   \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{AMD Mach 系列 CPLD}（续）}
+\begin{itemize}
+\tightlist
 \item
   \textbf{Mach 4 架构}:
 
   \begin{itemize}
   \tightlist
   \item
-    如图7所示，Mach 4 芯片由多个 34V16 类似 PAL
+    Mach 4 芯片由多个 34V16 类似 PAL
     的块组成，并通过中央交换矩阵（Central Switch Matrix）互连。
   \item
     \textbf{芯片规模}: 从 6 到 16 个 PAL 块不等，对应的等效门数约为 2000
@@ -1208,10 +1291,20 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
     实现的电路时序延迟是可预测的。
   \end{itemize}
 \end{itemize}
+\end{block}
+\end{frame}
 
-\pandocbounded{\includegraphics[keepaspectratio]{img1/MAch4.jpeg}}
-\textbf{图7} \emph{AMD Mach 4 CPLD结构.}
+\begin{frame}
+\begin{block}{\textbf{AMD Mach 系列 CPLD}（续）}
+\centering
+\includegraphics[width=0.84\linewidth,height=0.46\textheight,keepaspectratio]{img1/MAch4.jpeg}
 
+\textbf{图7：} \emph{AMD Mach 4 CPLD结构.}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{AMD Mach 系列 CPLD}（续）}
 \begin{itemize}
 \tightlist
 \item
@@ -1249,9 +1342,12 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
   \end{itemize}
 \end{itemize}
 \end{block}
+\end{frame}
 
+\begin{frame}
 \begin{block}{\textbf{Lattice CPLDs}}
 \phantomsection\label{lattice-cplds}
+\small
 \begin{itemize}
 \tightlist
 \item
@@ -1318,6 +1414,14 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
   \item
     \textbf{引脚到引脚延迟}: 5.5 纳秒，提供业界领先的速度。
   \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{Lattice CPLDs}（续）}
+\begin{itemize}
+\tightlist
 \item
   \textbf{3000 系列}:
 
@@ -1344,8 +1448,7 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
   \begin{itemize}
   \tightlist
   \item
-    如图8所示，芯片外边缘是双向
-    I/O，直接连接到\textbf{通用逻辑块（Generic Logic Blocks,
+    芯片外边缘是双向 I/O，直接连接到\textbf{通用逻辑块（Generic Logic Blocks,
     GLBs）}和\textbf{全局路由池（GRP）}。
   \item
     \textbf{GLBs}:
@@ -1363,13 +1466,19 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
     \item
       一组跨越整个芯片的导线，用于连接 GLB 的输入和输出。
     \item
-      所有互连都通过 GRP 进行，因此Lattice芯片的时序完全可预测，类似于
+      所有互连都通过 GRP 进行，因此 Lattice 芯片的时序完全可预测，类似于
       AMD Mach 器件。
     \end{itemize}
   \end{itemize}
 \end{itemize}
+\end{block}
+\end{frame}
 
-\pandocbounded{\includegraphics[keepaspectratio]{img1/lattice.jpeg}}
+\begin{frame}
+\begin{block}{\textbf{Lattice CPLDs}（续）}
+\centering
+\includegraphics[width=0.88\linewidth,height=0.64\textheight,keepaspectratio]{img1/lattice.jpeg}
+
 \textbf{图8：} \emph{Lattice (i)PLSI架构图.}
 \end{block}
 \end{frame}
@@ -1418,6 +1527,14 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
       最大器件：256 宏单元和 256 I/O。
     \end{itemize}
   \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{Cypress CPLDs}（续）}
+\begin{itemize}
+\tightlist
 \item
   \textbf{架构}:
 
@@ -1459,9 +1576,15 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
     CPLD 中类似 PAL 的块提供了额外灵活性，这是普通 PAL 所不具备的。
   \end{itemize}
 \end{itemize}
+\end{block}
+\end{frame}
 
-\pandocbounded{\includegraphics[keepaspectratio]{img1/cypress.jpeg}}
-\textbf{图9} \emph{Cypress FLASH370 CPLD架构图.}
+\begin{frame}
+\begin{block}{\textbf{Cypress CPLDs}（续）}
+\centering
+\includegraphics[width=0.88\linewidth,height=0.68\textheight,keepaspectratio]{img1/cypress.jpeg}
+
+\textbf{图9：} \emph{Cypress FLASH370 CPLD架构图.}
 \end{block}
 \end{frame}
 
@@ -1509,11 +1632,19 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
       每个宏单元包含两个或门。
     \item
       每个或门的输入连接到一个两位算术逻辑单元（ALU）。
-    \item
+  \item
       ALU
       可以生成其两个输入的任何函数，并将其输出馈送到可配置的触发器中。
     \end{itemize}
   \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{Xilinx XC7000 CPLDs}（续）}
+\begin{itemize}
+\tightlist
 \item
   \textbf{7300 系列}:
 
@@ -1583,11 +1714,19 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
 
     \begin{itemize}
     \tightlist
-    \item
+  \item
       能够利用宽与门/或门且不需要大量触发器的电路非常适合在 CPLD
       中实现。
     \end{itemize}
   \end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{CPLD 的应用}（续）}
+\begin{itemize}
+\tightlist
 \item
   \textbf{设计优势}:
 
@@ -1625,7 +1764,7 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
     \begin{itemize}
     \tightlist
     \item
-      这是 CPLD 架构最显著的优势之一。
+        这是 CPLD 架构最显著的优势之一。
     \end{itemize}
   \end{itemize}
 \end{itemize}
@@ -1755,8 +1894,14 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
     每个 CLB 还包含两个触发器。
   \end{itemize}
 \end{itemize}
+\end{block}
+\end{frame}
 
-\pandocbounded{\includegraphics[keepaspectratio]{img1/XC4000.jpeg}}
+\begin{frame}
+\begin{block}{\textbf{XC4000 逻辑块（CLB）}:}
+\centering
+\includegraphics[width=0.88\linewidth,height=0.68\textheight,keepaspectratio]{img1/XC4000.jpeg}
+
 \textbf{图10 -} \emph{Xilinx XC4000 可配置逻辑块（CLB）。}
 \end{block}
 \end{frame}
@@ -1829,8 +1974,14 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
     因此，实现电路的速度性能部分取决于 CAD 工具如何分配线段给各个信号。
   \end{itemize}
 \end{itemize}
+\end{block}
+\end{frame}
 
-\pandocbounded{\includegraphics[keepaspectratio]{img1/XC4000Wire.jpeg}}
+\begin{frame}
+\begin{block}{\textbf{互连结构}:}
+\centering
+\includegraphics[width=0.88\linewidth,height=0.68\textheight,keepaspectratio]{img1/XC4000Wire.jpeg}
+
 \textbf{图11 -} \emph{Xilinx XC4000 线段示意图。}
 \end{block}
 \end{frame}
@@ -1876,239 +2027,217 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
   这些模块（或其变体）在 FPGA 中几乎是标准的，但不同 FPGA
   家族可能会缺少某些模块或包含额外的模块。
 \end{itemize}
-
-\pandocbounded{\includegraphics[keepaspectratio]{img1/XC7A35T.jpeg}}\\
-\textbf{图12 - Artix-7 XC7A35T FPGA 的基本组成模块。}
 \end{block}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{Xilinx Artix-7 XC7A35T FPGA 的布局}}
+\centering
+\includegraphics[width=0.88\linewidth,height=0.68\textheight,keepaspectratio]{img1/XC7A35T.jpeg}
+
+\textbf{图12 - Artix-7 XC7A35T FPGA 的基本组成模块。}
 \end{block}
 \end{frame}
 
 \begin{frame}
 \begin{block}{\textbf{输入/输出块}}
 \phantomsection\label{ux8f93ux5165ux8f93ux51faux5757}
-\begin{block}{\textbf{简介}}
-\phantomsection\label{ux7b80ux4ecb}
 \begin{itemize}
 \tightlist
-\item
-  数字设备通过其输入和输出引脚与外界交互，FPGA 也不例外。
-\item
-  数据通过输入引脚从外部获取，输出引脚用于将数据输出到外部。
-\item
-  这些输入和输出引脚位于 FPGA 的输入/输出块中。
+\item 数字设备通过其输入和输出引脚与外界交互，FPGA 也不例外。
+\item 数据通过输入引脚从外部获取，输出引脚用于将数据输出到外部。
+\item 这些输入和输出引脚位于 FPGA 的输入/输出块中。
 \end{itemize}
 \end{block}
+\end{frame}
 
-\begin{block}{\textbf{电压与引脚数量}}
-\phantomsection\label{ux7535ux538bux4e0eux5f15ux811aux6570ux91cf}
+\begin{frame}
+\begin{block}{\textbf{输入/输出块}（续）}
+\textbf{电压与引脚数量}
 \begin{itemize}
 \tightlist
-\item
-  Artix-7 XC7A35T FPGA 的输入/输出引脚支持标准电压范围：1.2 到 3.3 V。
-\item
-  Basys3 开发板上的 FPGA 有 106 个输入/输出引脚。
-\item
-  Arty 开发板上的 FPGA 有 210 个输入/输出引脚。
-\item
-  这些引脚可以用作输入、输出或两者兼用。
+\item Artix-7 XC7A35T FPGA 的输入/输出引脚支持标准电压范围：1.2 到 3.3 V。
+\item Basys3 开发板上的 FPGA 有 106 个输入/输出引脚。
+\item Arty 开发板上的 FPGA 有 210 个输入/输出引脚。
+\item 这些引脚可以用作输入、输出或两者兼用。
 \end{itemize}
 \end{block}
+\end{frame}
 
-\begin{block}{\textbf{引脚模式}}
-\phantomsection\label{ux5f15ux811aux6a21ux5f0f}
+\begin{frame}
+\begin{block}{\textbf{输入/输出块}（续）}
+\textbf{引脚模式}
 \begin{enumerate}
 \tightlist
-\item
-  \textbf{输入模式}: 通过引脚从外部获取数据。
-\item
-  \textbf{输出模式}: 通过引脚向外部输出电压电平。
-\item
-  \textbf{双向模式}: 同一引脚可用于输入和输出。
+\item \textbf{输入模式}: 通过引脚从外部获取数据。
+\item \textbf{输出模式}: 通过引脚向外部输出电压电平。
+\item \textbf{双向模式}: 同一引脚可用于输入和输出。
 \end{enumerate}
 \end{block}
+\end{frame}
 
-\begin{block}{\textbf{引脚分组与模式}}
-\phantomsection\label{ux5f15ux811aux5206ux7ec4ux4e0eux6a21ux5f0f}
+\begin{frame}
+\begin{block}{\textbf{输入/输出块}（续）}
+\textbf{引脚分组与单端模式}
 \begin{itemize}
 \tightlist
-\item
-  输入/输出引脚被分组为\textbf{组（Banks）}。
-\item
-  每组中的两个引脚被分组为正（P）负（N）对。
-\item
-  \textbf{单端模式}:
-
-  \begin{itemize}
-  \tightlist
-  \item
-    输入电压接近地电平时，逻辑电平为 0。
-  \item
-    输入电压接近 \emph{VCC} 时，逻辑电平为 1。
-  \end{itemize}
-\item
-  \textbf{差分模式}:
-
-  \begin{itemize}
-  \tightlist
-  \item
-    引脚 P 的电压低于引脚 N 时，逻辑电平为 0。
-  \item
-    引脚 P 的电压高于引脚 N 时，逻辑电平为 1。
-  \end{itemize}
-\item
-  \textbf{参考模式}:
-
-  \begin{itemize}
-  \tightlist
-  \item
-    输入电压低于参考电压时，逻辑电平为 0。
-  \item
-    输入电压高于参考电压时，逻辑电平为 1。
-  \end{itemize}
+\item 输入/输出引脚被分组为\textbf{组（Banks）}。
+\item 每组中的两个引脚被分组为正（P）负（N）对。
+\item \textbf{单端模式}:
+\begin{itemize}
+\tightlist
+\item 输入电压接近地电平时，逻辑电平为 0。
+\item 输入电压接近 \emph{VCC} 时，逻辑电平为 1。
+\end{itemize}
 \end{itemize}
 \end{block}
+\end{frame}
 
-\begin{block}{\textbf{输出模式}}
-\phantomsection\label{ux8f93ux51faux6a21ux5f0f}
+\begin{frame}
+\begin{block}{\textbf{输入/输出块}（续）}
+\textbf{差分模式与参考模式}
 \begin{itemize}
 \tightlist
-\item
-  单端引脚也可用作输出。
+\item \textbf{差分模式}:
+\begin{itemize}
+\tightlist
+\item 引脚 P 的电压低于引脚 N 时，逻辑电平为 0。
+\item 引脚 P 的电压高于引脚 N 时，逻辑电平为 1。
+\end{itemize}
+\item \textbf{参考模式}:
+\begin{itemize}
+\tightlist
+\item 输入电压低于参考电压时，逻辑电平为 0。
+\item 输入电压高于参考电压时，逻辑电平为 1。
+\end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
 
-  \begin{itemize}
-  \tightlist
-  \item
-    逻辑电平为 1 时，引脚电压为 \emph{VCC}。
-  \item
-    逻辑电平为 0 时，引脚电压为地电平。
-  \end{itemize}
+\begin{frame}
+\begin{block}{\textbf{输入/输出块}（续）}
+\textbf{输出模式}
+\begin{itemize}
+\tightlist
+\item 单端引脚也可用作输出。
+\begin{itemize}
+\tightlist
+\item 逻辑电平为 1 时，引脚电压为 \emph{VCC}。
+\item 逻辑电平为 0 时，引脚电压为地电平。
+\end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{可配置逻辑块（CLB）}}
+\phantomsection\label{ux53efux914dux7f6eux903bux8f91ux5757clb}
+\begin{itemize}
+\tightlist
+\item \textbf{简介}:
+\begin{itemize}
+\tightlist
+\item 可配置逻辑块（CLB）是 FPGA 中实现数字系统的基本元素。
+\item CLB 的核心包括查找表（LUT）、触发器和多路复用器。
+\end{itemize}
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\begin{block}{\textbf{可配置逻辑块（CLB）}（续）}
+\begin{block}{\textbf{多路复用器}}
+\begin{itemize}
+\tightlist
+\item \textbf{基本概念}:
+\begin{itemize}
+\tightlist
+\item 多路复用器是一种选择器，具有 \emph{N} 个选择位、2 \emph{N} 个输入引脚和 1 个输出引脚。
+\item 通过选择位决定哪个输入引脚连接到输出。
+\end{itemize}
+\item \textbf{二选一多路复用器}:
+\begin{itemize}
+\tightlist
+\item 图2.10展示了由基本逻辑门构成的二选一多路复用器的电路图。
+\item 工作原理：
+\[
+out = \begin{cases}
+\text{in1} & \text{if sel = 0} \\
+\text{in2} & \text{if sel = 1}
+\end{cases}
+\tag{2.4}
+\]
+\item 选择引脚（sel）决定哪个输入连接到输出。
+\end{itemize}
+\item \textbf{32选1多路复用器}:
+\begin{itemize}
+\tightlist
+\item 有 5 个选择位，可以选择 32 个输入中的其中一个。
+\end{itemize}
 \end{itemize}
 \end{block}
 \end{block}
 \end{frame}
 
-\begin{frame}[fragile]
-\begin{block}{\textbf{可配置逻辑块（CLB）}}
-\phantomsection\label{ux53efux914dux7f6eux903bux8f91ux5757clb}
-\begin{itemize}
-\tightlist
-\item
-  \textbf{简介}:
+\begin{frame}
+\begin{block}{\textbf{可配置逻辑块（CLB）}（续）}
+\centering
+\includegraphics[width=0.88\linewidth,height=0.42\textheight,keepaspectratio]{img1/XC7A35TMUX.jpeg}
 
-  \begin{itemize}
-  \tightlist
-  \item
-    可配置逻辑块（CLB）是 FPGA 中实现数字系统的基本元素。
-  \item
-    CLB 的核心包括查找表（LUT）、触发器和多路复用器。
-  \end{itemize}
-\end{itemize}
-
-\begin{block}{\textbf{多路复用器}}
-\phantomsection\label{ux591aux8defux590dux7528ux5668}
-\begin{itemize}
-\tightlist
-\item
-  \textbf{基本概念}:
-
-  \begin{itemize}
-  \tightlist
-  \item
-    多路复用器是一种选择器，具有 \emph{N} 个选择位、2 \emph{N}
-    个输入引脚和1个输出引脚。
-  \item
-    通过选择位决定哪个输入引脚连接到输出。
-  \end{itemize}
-\item
-  \textbf{二选一多路复用器}:
-
-  \begin{itemize}
-  \tightlist
-  \item
-    图2.10展示了由基本逻辑门构成的二选一多路复用器的电路图。
-  \item
-    工作原理：
-    \[out = \begin{cases} \text{in1} & \text{if sel = 0} \\ \text{in2} & \text{if sel = 1} \end{cases} \tag{2.4}\]
-  \item
-    选择引脚（sel）决定哪个输入连接到输出。
-  \end{itemize}
-\item
-  \textbf{32选1多路复用器}:
-
-  \begin{itemize}
-  \tightlist
-  \item
-    有5个选择位，可以选择32个输入中的其中一个。
-  \end{itemize}
-\end{itemize}
-
-\pandocbounded{\includegraphics[keepaspectratio]{img1/XC7A35TMUX.jpeg}}\\
 \textbf{图13 - 由基本逻辑门构成的二选一多路复用器电路图。}
 \end{block}
+\end{frame}
 
+\begin{frame}
+\begin{block}{\textbf{可配置逻辑块（CLB）}（续）}
 \begin{block}{\textbf{触发器}}
-\phantomsection\label{ux89e6ux53d1ux5668}
 \begin{itemize}
 \tightlist
-\item
-  \textbf{基本概念}:
-
-  \begin{itemize}
-  \tightlist
-  \item
-    触发器是 FPGA 中的基本存储单元，能够存储1位数据。
-  \item
-    触发器可以通过数字逻辑门构建，但其布局较为复杂。
-  \item
-    触发器以抽象形式表示为图2.11，其中 \passthrough{\lstinline!in!}
-    引脚用于设置存储的位值，\passthrough{\lstinline!out!}
-    引脚用于获取存储的值。
-  \item
-    触发器只能存储逻辑电平0或1。
-  \end{itemize}
+\item \textbf{基本概念}:
+\begin{itemize}
+\tightlist
+\item 触发器是 FPGA 中的基本存储单元，能够存储 1 位数据。
+\item 触发器可以通过数字逻辑门构建，但其布局较为复杂。
+\item 触发器以抽象形式表示为图2.11，其中 \texttt{in} 引脚用于设置存储的位值，\texttt{out} 引脚用于获取存储的值。
+\item 触发器只能存储逻辑电平 0 或 1。
 \end{itemize}
+\end{itemize}
+\end{block}
+\centering
+\includegraphics[width=0.7\linewidth,height=0.26\textheight,keepaspectratio]{img1/XC7A35TFF.jpeg}
 
-\pandocbounded{\includegraphics[keepaspectratio]{img1/XC7A35TFF.jpeg}}\\
 \textbf{图14 - 触发器的抽象表示。}
 \end{block}
+\end{frame}
 
+\begin{frame}
+\begin{block}{\textbf{可配置逻辑块（CLB）}（续）}
 \begin{block}{\textbf{查找表（LUT）}}
 \phantomsection\label{ux67e5ux627eux8868lut}
 \begin{itemize}
 \tightlist
-\item
-  \textbf{基本概念}:
-
-  \begin{itemize}
-  \tightlist
-  \item
-    LUT 是一组触发器，连接到多路复用器的输入引脚。
-  \item
-    多路复用器的选择位用于选择要访问的触发器地址。
-  \item
-    LUT 可以实现任何以选择位为输入变量的组合逻辑函数。
-  \item
-    当触发器的内容改变时，实现的逻辑函数也会改变，从而实现 FPGA
-    的可重构性。
-  \end{itemize}
-\item
-  \textbf{N 输入 LUT}:
-
-  \begin{itemize}
-  \tightlist
-  \item
-    具有 2 \emph{N} 个表项，\emph{N} 个选择位。
-  \item
-    图2.12展示了一个由触发器和多路复用器构成的抽象 LUT。
-  \item
-    Artix-7 FPGA 中，两个5输入的 LUT
-    可以组合实现6输入、7输入或8输入的组合逻辑函数。
-  \end{itemize}
+\item \textbf{基本概念}:
+\begin{itemize}
+\tightlist
+\item LUT 是一组触发器，连接到多路复用器的输入引脚。
+\item 多路复用器的选择位用于选择要访问的触发器地址。
+\item LUT 可以实现任何以选择位为输入变量的组合逻辑函数。
+\item 当触发器的内容改变时，实现的逻辑函数也会改变，从而实现 FPGA 的可重构性。
 \end{itemize}
-
-\pandocbounded{\includegraphics[keepaspectratio]{img1/XC7A35LUT.jpeg}}\\
-\textbf{图14 - N 输入 LUT 的抽象表示。}
+\item \textbf{N 输入 LUT}:
+\begin{itemize}
+\tightlist
+\item 具有 2 \emph{N} 个表项，\emph{N} 个选择位。
+\item 图2.12展示了一个由触发器和多路复用器构成的抽象 LUT。
+\item Artix-7 FPGA 中，两个 5 输入的 LUT 可以组合实现 6 输入、7 输入或 8 输入的组合逻辑函数。
+\end{itemize}
+\end{itemize}
 \end{block}
+\centering
+\includegraphics[width=0.68\linewidth,height=0.26\textheight,keepaspectratio]{img1/XC7A35LUT.jpeg}
+
+\textbf{图15 - N 输入 LUT 的抽象表示。}
 \end{block}
 \end{frame}
 
@@ -2269,8 +2398,14 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
     \textbf{逻辑容量}: 从约 4000 门到超过 15000 门。
   \end{itemize}
 \end{itemize}
+\end{block}
+\end{frame}
 
-\pandocbounded{\includegraphics[keepaspectratio]{img1/FLEX800.jpeg}}
+\begin{frame}
+\begin{block}{\textbf{Altera FLEX 8000}}
+\centering
+\includegraphics[width=0.88\linewidth,height=0.68\textheight,keepaspectratio]{img1/FLEX800.jpeg}
+
 \textbf{图12:} \emph{Altera FLEX 8000 FPGA 架构。}
 \end{block}
 \end{frame}
@@ -2289,7 +2424,9 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
   位表示。两个 ADC 模块可以同时处理两个不同的模拟信号。
 \end{itemize}
 \end{block}
+\end{frame}
 
+\begin{frame}
 \begin{block}{\textbf{高速串行 I/O 收发器}}
 \phantomsection\label{ux9ad8ux901fux4e32ux884c-io-ux6536ux53d1ux5668}
 \begin{itemize}
@@ -2322,8 +2459,12 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
     \textbf{LE 细节}: 如图21所示。
   \end{itemize}
 \end{itemize}
+\end{frame}
 
-\pandocbounded{\includegraphics[keepaspectratio]{img1/FLEX800LE.jpeg}}
+\begin{frame}
+\centering
+\includegraphics[width=0.84\linewidth,height=0.66\textheight,keepaspectratio]{img1/FLEX800LE.jpeg}
+
 \textbf{图13:} \emph{Altera FLEX 8000 逻辑单元（LE）。}
 \end{frame}
 
@@ -2351,8 +2492,12 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
     工具能够自动配置，且互连延迟比使用许多小段线的 FPGA 更可预测。
   \end{itemize}
 \end{itemize}
+\end{frame}
 
-\pandocbounded{\includegraphics[keepaspectratio]{img1/FLEX800LAB.jpeg}}
+\begin{frame}
+\centering
+\includegraphics[width=0.84\linewidth,height=0.66\textheight,keepaspectratio]{img1/FLEX800LAB.jpeg}
+
 \textbf{图14:} \emph{Altera FLEX 8000 逻辑阵列块（LAB）。}
 \end{frame}
 
@@ -2385,8 +2530,12 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
     \textbf{逻辑容量}: 目前 FPGA 中最高，但难以提供准确数字。
   \end{itemize}
 \end{itemize}
+\end{frame}
 
-\pandocbounded{\includegraphics[keepaspectratio]{img1/FLEX10K.jpeg}}
+\begin{frame}
+\centering
+\includegraphics[width=0.88\linewidth,height=0.68\textheight,keepaspectratio]{img1/FLEX10K.jpeg}
+
 \textbf{图15：} \emph{Altera FLEX 10K FPGA 架构。}
 \end{frame}
 
@@ -2502,7 +2651,9 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
   进行数字系统设计的哲学，强调如何有效地使用 FPGA。
 \end{itemize}
 \end{block}
+\end{frame}
 
+\begin{frame}
 \begin{block}{\textbf{使用 FPGA 时的思考方式}}
 \phantomsection\label{ux4f7fux7528-fpga-ux65f6ux7684ux601dux8003ux65b9ux5f0f}
 \begin{itemize}
@@ -2522,7 +2673,9 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
   可以在初始设计完成后重新配置，用户可以利用这一特性在设计和嵌入设备后改进和修改设计。
 \end{itemize}
 \end{block}
+\end{frame}
 
+\begin{frame}
 \begin{block}{\textbf{FPGA 的优缺点}}
 \phantomsection\label{fpga-ux7684ux4f18ux7f3aux70b9}
 \begin{itemize}
@@ -2542,7 +2695,9 @@ Memory}，\textbf{PROM}）是一种可编程逻辑器件。
   具有并行实现能力，操作速度更快，且可以在 FPGA 上实现微控制器。
 \end{itemize}
 \end{block}
+\end{frame}
 
+\begin{frame}
 \begin{block}{\textbf{FPGA 的用途}}
 \phantomsection\label{fpga-ux7684ux7528ux9014}
 FPGA 可以用于几乎所有需要数字系统的领域。为了激励读者并说明学习基于 FPGA
