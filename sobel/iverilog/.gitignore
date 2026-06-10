@@ -1,0 +1,6 @@
+build/
+data/sobel_out.pgm
+data/input_rgb.png
+data/sobel_out.png
+*.vcd
+*.vvp
