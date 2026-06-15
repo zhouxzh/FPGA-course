@@ -20,23 +20,40 @@
 
 ## 1. 实验目标
 
-```text
-PC 摄像头 / 图片
-    -> UART 115200
-    -> ZYNQ PS UART
-    -> PS 写入 AXI BRAM 原始 RGB 图像
-    -> PL 读取 BRAM 原图
-    -> PL rgb_to_gray
-    -> PL sobel_core
-    -> PL edge_mem
-    -> HDMI 显示 Sobel 边缘图
+```mermaid
+flowchart LR
+    pc["PC 摄像头 / 图片"] --> uart["UART<br/>115200"]
+    uart --> ps["ZYNQ PS UART"]
+    ps --> write["PS 写入 AXI BRAM<br/>原始 RGB 图像"]
+    write --> bram["AXI BRAM<br/>0x00RRGGBB"]
+    bram --> read["PL 读取 BRAM 原图"]
+    read --> gray["PL rgb_to_gray"]
+    gray --> sobel["PL sobel_core"]
+    sobel --> edge["PL edge_mem"]
+    edge --> hdmi["HDMI 显示<br/>Sobel 边缘图"]
+
+    classDef pc fill:#dcfce7,stroke:#16a34a,color:#0f172a,stroke-width:2px;
+    classDef ps fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef mem fill:#ede9fe,stroke:#7c3aed,color:#0f172a,stroke-width:2px;
+    classDef pl fill:#fef3c7,stroke:#d97706,color:#0f172a,stroke-width:2px;
+    classDef out fill:#fae8ff,stroke:#c026d3,color:#0f172a,stroke-width:2px;
+    class pc,uart pc;
+    class ps,write ps;
+    class bram,edge mem;
+    class read,gray,sobel pl;
+    class hdmi out;
 ```
 
 和 `sobel_03_uart_hdmi` 的区别：
 
-```text
-sobel_03: HDMI 显示串口收到的原始 RGB 图像
-sobel_04: HDMI 显示 PL Sobel 运算后的灰度边缘图
+```mermaid
+flowchart LR
+    exp3["sobel_03<br/>HDMI 显示串口收到的原始 RGB 图像"] --> exp4["sobel_04<br/>HDMI 显示 PL Sobel 运算后的灰度边缘图"]
+
+    classDef old fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef new fill:#fef3c7,stroke:#d97706,color:#0f172a,stroke-width:2px;
+    class exp3 old;
+    class exp4 new;
 ```
 
 当前保持已经调通的稳定串口配置：
@@ -50,53 +67,53 @@ fps    = 0.2
 
 ## 2. 主要文件
 
-```text
-sobel_04_uart_sobel_hdmi.xpr
-    Vivado 工程
+```mermaid
+flowchart TB
+    project["sobel_04_uart_sobel_hdmi.xpr<br/>Vivado 工程"]
+    project --> bd["create_ps_uart_sobel_hdmi_bd.tcl<br/>PS UART + AXI BRAM BD 脚本"]
+    project --> top["top.v<br/>连接 ZYNQ PS BD 和 HDMI PL 顶层"]
+    top --> pltop["hdmi_pl_top.v<br/>video_clock + rgb2dvi + Sobel 显示模块"]
+    pltop --> display["hdmi_bram_sobel_display.v<br/>BRAM 读图 + PL Sobel + HDMI 数据输出"]
+    display --> gray["rgb_to_gray.v<br/>RGB888 转灰度"]
+    display --> sobel["sobel_core.v<br/>Sobel 卷积核心"]
+    project --> xdc["hdmi_out_test.xdc<br/>HDMI 管脚约束"]
+    project --> sdkmain["sobel_04_uart_sobel_hdmi.sdk/ps_uart_bram_app/src/main.c<br/>SDK 中运行的 PS 程序"]
+    project --> backup["ps_uart_sobel_bram_app/src/main.c<br/>PS 端源码备份"]
+    host["../host_camera_uart/"] --> sender["camera_uart_sender.py<br/>PC 端串口发送脚本"]
 
-create_ps_uart_sobel_hdmi_bd.tcl
-    重新生成 PS UART + AXI BRAM Block Design 的 Tcl 脚本
-
-sobel_04_uart_sobel_hdmi.srcs/sources_1/new/top.v
-    工程顶层，连接 ZYNQ PS BD 和 HDMI PL 顶层
-
-sobel_04_uart_sobel_hdmi.srcs/sources_1/new/hdmi_pl_top.v
-    HDMI PL 顶层，连接 video_clock、rgb2dvi 和 Sobel 显示模块
-
-sobel_04_uart_sobel_hdmi.srcs/sources_1/new/hdmi_bram_sobel_display.v
-    从 BRAM 读取原图，在 PL 中执行 Sobel，并输出 HDMI 显示数据
-
-sobel_04_uart_sobel_hdmi.srcs/sources_1/new/rgb_to_gray.v
-    RGB888 转灰度
-
-sobel_04_uart_sobel_hdmi.srcs/sources_1/new/sobel_core.v
-    Sobel 卷积核心
-
-sobel_04_uart_sobel_hdmi.srcs/constrs_1/new/hdmi_out_test.xdc
-    HDMI 管脚约束
-
-sobel_04_uart_sobel_hdmi.sdk/ps_uart_bram_app/src/main.c
-    SDK 工作区中实际编译运行的 PS 端程序
-
-ps_uart_sobel_bram_app/src/main.c
-    PS 端程序源码备份，内容与 SDK 中 main.c 保持一致
-
-../host_camera_uart/camera_uart_sender.py
-    PC 端串口发送脚本
+    classDef project fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef script fill:#dcfce7,stroke:#16a34a,color:#0f172a,stroke-width:2px;
+    classDef pl fill:#fef3c7,stroke:#d97706,color:#0f172a,stroke-width:2px;
+    classDef ps fill:#ede9fe,stroke:#7c3aed,color:#0f172a,stroke-width:2px;
+    classDef constr fill:#fee2e2,stroke:#dc2626,color:#0f172a,stroke-width:2px;
+    classDef host fill:#ccfbf1,stroke:#0f766e,color:#0f172a,stroke-width:2px;
+    class project project;
+    class bd script;
+    class top,pltop,display,gray,sobel pl;
+    class sdkmain,backup ps;
+    class xdc constr;
+    class host,sender host;
 ```
 
 ## 3. 硬件结构
 
 Block Design 仍然复用第 3 步的硬件链路：
 
-```text
-processing_system7_0 M_AXI_GP0
-    -> SmartConnect
-    -> AXI BRAM Controller
-    -> Block Memory Generator Port A
+```mermaid
+flowchart LR
+    ps["processing_system7_0<br/>M_AXI_GP0"] --> smart["SmartConnect"]
+    smart --> ctrl["AXI BRAM Controller"]
+    ctrl --> porta["Block Memory Generator<br/>Port A"]
+    porta --> bram["Shared BRAM"]
+    bram --> portb["Block Memory Generator<br/>Port B"]
+    portb --> pl["PL Sobel HDMI display"]
 
-Block Memory Generator Port B
-    -> PL Sobel HDMI display
+    classDef ps fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef axi fill:#ede9fe,stroke:#7c3aed,color:#0f172a,stroke-width:2px;
+    classDef pl fill:#fef3c7,stroke:#d97706,color:#0f172a,stroke-width:2px;
+    class ps ps;
+    class smart,ctrl,porta,bram,portb axi;
+    class pl pl;
 ```
 
 BRAM 地址：
@@ -115,8 +132,18 @@ data    = 0x00RRGGBB
 
 PL 端 `hdmi_bram_sobel_display.v` 每个 HDMI 帧开始时扫描一遍 BRAM 中的 `128 x 72` 原图，然后完成：
 
-```text
-BRAM RGB888 -> rgb_to_gray -> sobel_core -> edge_mem
+```mermaid
+flowchart LR
+    bram["BRAM RGB888"] --> gray["rgb_to_gray"]
+    gray --> sobel["sobel_core"]
+    sobel --> edge["edge_mem"]
+
+    classDef data fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef alg fill:#fef3c7,stroke:#d97706,color:#0f172a,stroke-width:2px;
+    classDef mem fill:#ede9fe,stroke:#7c3aed,color:#0f172a,stroke-width:2px;
+    class bram data;
+    class gray,sobel alg;
+    class edge mem;
 ```
 
 HDMI 显示时从 `edge_mem` 读取 8 bit 灰度边缘值，并复制到 RGB 三个通道：

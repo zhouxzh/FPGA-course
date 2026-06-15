@@ -13,14 +13,23 @@
 
 ## 2. 数据流
 
-```text
-image_rom_128x72
-    -> rgb_to_gray
-    -> sobel_core
-    -> edge_mem
-    -> hdmi_sobel_display
-    -> rgb2dvi_0
-    -> HDMI 显示器
+```mermaid
+flowchart LR
+    rom["image_rom_128x72<br/>RGB888"] --> gray["rgb_to_gray<br/>灰度转换"]
+    gray --> sobel["sobel_core<br/>Sobel 边缘强度"]
+    sobel --> edge["edge_mem<br/>一帧边缘缓存"]
+    edge --> display["hdmi_sobel_display<br/>放大显示"]
+    display --> dvi["rgb2dvi_0<br/>TMDS 编码"]
+    dvi --> hdmi["HDMI 显示器"]
+
+    classDef data fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef alg fill:#fef3c7,stroke:#d97706,color:#0f172a,stroke-width:2px;
+    classDef mem fill:#ede9fe,stroke:#7c3aed,color:#0f172a,stroke-width:2px;
+    classDef out fill:#fae8ff,stroke:#c026d3,color:#0f172a,stroke-width:2px;
+    class rom data;
+    class gray,sobel,display,dvi alg;
+    class edge mem;
+    class hdmi out;
 ```
 
 显示关系：
@@ -34,30 +43,27 @@ HDMI 输出: 1280 x 720
 
 ## 3. 主要文件
 
-```text
-sobel_02_hdmi_sobel.xpr
-    Vivado 工程
+```mermaid
+flowchart TB
+    project["sobel_02_hdmi_sobel.xpr<br/>Vivado 工程"]
+    project --> tcl["add_sobel_sources.tcl<br/>加入 Sobel 源码"]
+    project --> top["top.v<br/>工程顶层"]
+    top --> display["hdmi_sobel_display.v<br/>固定图片处理 + HDMI 显示"]
+    display --> rom["image_rom_128x72.v<br/>固定图片 ROM"]
+    display --> gray["rgb_to_gray.v<br/>RGB888 转灰度"]
+    display --> sobel["sobel_core.v<br/>Sobel 卷积核心"]
+    project --> xdc["hdmi_out_test.xdc<br/>HDMI 管脚约束"]
 
-add_sobel_sources.tcl
-    向工程加入 Sobel 相关源码的 Tcl 脚本
-
-sobel_02_hdmi_sobel.srcs/sources_1/new/top.v
-    工程顶层
-
-sobel_02_hdmi_sobel.srcs/sources_1/new/hdmi_sobel_display.v
-    读取固定图片，驱动灰度转换、Sobel 和 HDMI 显示
-
-sobel_02_hdmi_sobel.srcs/sources_1/new/rgb_to_gray.v
-    RGB888 转灰度模块
-
-sobel_02_hdmi_sobel.srcs/sources_1/new/sobel_core.v
-    Sobel 卷积核心
-
-sobel_02_hdmi_sobel.srcs/sources_1/new/image_rom_128x72.v
-    固定图片 ROM
-
-sobel_02_hdmi_sobel.srcs/constrs_1/new/hdmi_out_test.xdc
-    HDMI 管脚约束
+    classDef project fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef script fill:#dcfce7,stroke:#16a34a,color:#0f172a,stroke-width:2px;
+    classDef pl fill:#fef3c7,stroke:#d97706,color:#0f172a,stroke-width:2px;
+    classDef data fill:#ede9fe,stroke:#7c3aed,color:#0f172a,stroke-width:2px;
+    classDef constr fill:#fee2e2,stroke:#dc2626,color:#0f172a,stroke-width:2px;
+    class project project;
+    class tcl script;
+    class top,display,gray,sobel pl;
+    class rom data;
+    class xdc constr;
 ```
 
 上一级目录中的 `../hdmi_common` 是 Sobel 系列工程共用的 HDMI 基础依赖目录，不能删除。
@@ -74,15 +80,28 @@ D:\Github\FPGA-course\zynq7020-image-processing\sobel_02_hdmi_sobel\sobel_02_hdm
 
 确认 Sources 中包含：
 
-```text
-top.v
-hdmi_sobel_display.v
-rgb_to_gray.v
-sobel_core.v
-image_rom_128x72.v
-video_clock
-rgb2dvi_0
-hdmi_out_test.xdc
+```mermaid
+flowchart TB
+    sources["Vivado Sources"]
+    sources --> top["top.v<br/>工程顶层"]
+    sources --> display["hdmi_sobel_display.v<br/>Sobel 处理和 HDMI 显示"]
+    sources --> gray["rgb_to_gray.v<br/>RGB 转灰度"]
+    sources --> sobel["sobel_core.v<br/>Sobel 核心"]
+    sources --> rom["image_rom_128x72.v<br/>固定图片 ROM"]
+    sources --> clock["video_clock<br/>视频时钟 IP"]
+    sources --> dvi["rgb2dvi_0<br/>HDMI 输出 IP"]
+    sources --> xdc["hdmi_out_test.xdc<br/>HDMI 管脚约束"]
+
+    classDef root fill:#111827,stroke:#111827,color:#ffffff,stroke-width:2px;
+    classDef pl fill:#fef3c7,stroke:#d97706,color:#0f172a,stroke-width:2px;
+    classDef data fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef ip fill:#ede9fe,stroke:#7c3aed,color:#0f172a,stroke-width:2px;
+    classDef constr fill:#fee2e2,stroke:#dc2626,color:#0f172a,stroke-width:2px;
+    class sources root;
+    class top,display,gray,sobel pl;
+    class rom data;
+    class clock,dvi ip;
+    class xdc constr;
 ```
 
 如果 Sobel 相关源码没有加入工程，可在 Vivado Tcl Console 中执行：
@@ -106,21 +125,28 @@ top
 
 打开 `hdmi_sobel_display.v`，重点观察：
 
-```text
-ST_IDLE
-ST_RUN
-ST_WAIT
-ST_DISPLAY
+```mermaid
+stateDiagram-v2
+    [*] --> ST_IDLE
+    ST_IDLE --> ST_RUN: 开始扫描固定图片
+    ST_RUN --> ST_WAIT: 灰度和 Sobel 流水线推进
+    ST_WAIT --> ST_DISPLAY: edge_mem 写入完成
+    ST_DISPLAY --> ST_IDLE: 当前 HDMI 帧显示结束
 ```
 
 这几个状态完成固定图片扫描、灰度转换、Sobel 处理和 HDMI 显示。
 
 继续观察：
 
-```text
-rgb_to_gray u_rgb_to_gray
-sobel_core u_sobel_core
-edge_mem
+```mermaid
+flowchart LR
+    rgb["rgb_to_gray<br/>u_rgb_to_gray"] --> sobel["sobel_core<br/>u_sobel_core"]
+    sobel --> mem["edge_mem<br/>边缘结果缓存"]
+
+    classDef alg fill:#fef3c7,stroke:#d97706,color:#0f172a,stroke-width:2px;
+    classDef mem fill:#ede9fe,stroke:#7c3aed,color:#0f172a,stroke-width:2px;
+    class rgb,sobel alg;
+    class mem mem;
 ```
 
 报告中应说明 `edge_valid` 有效时如何把 `edge_data` 写入 `edge_mem`。

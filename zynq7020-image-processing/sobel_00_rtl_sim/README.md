@@ -14,15 +14,24 @@
 
 ## 2. 数据流
 
-```text
-input_rgb.hex
-    -> UART byte stream model
-    -> uart_rx
-    -> image_frame_rx
-    -> rgb_to_gray
-    -> sobel_core
-    -> video_stream_model
-    -> sobel_out.pgm / sobel_out.png
+```mermaid
+flowchart LR
+    input["input_rgb.hex"] --> stream["UART byte stream model"]
+    stream --> uart["uart_rx"]
+    uart --> frame["image_frame_rx"]
+    frame --> gray["rgb_to_gray"]
+    gray --> sobel["sobel_core"]
+    sobel --> video["video_stream_model"]
+    video --> out["sobel_out.pgm / sobel_out.png"]
+
+    classDef data fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef uart fill:#dcfce7,stroke:#16a34a,color:#0f172a,stroke-width:2px;
+    classDef alg fill:#fef3c7,stroke:#d97706,color:#0f172a,stroke-width:2px;
+    classDef out fill:#fae8ff,stroke:#c026d3,color:#0f172a,stroke-width:2px;
+    class input,out data;
+    class stream,uart,frame uart;
+    class gray,sobel,video alg;
+    class out out;
 ```
 
 仿真中的 UART 帧格式与后续上板实验保持一致：
@@ -37,61 +46,83 @@ pixels      : R G B, repeated 128 times per row
 
 ## 3. 主要文件
 
-```text
-Makefile
-    Linux、macOS、MSYS2 或 Git Bash 下的仿真入口
+```mermaid
+flowchart TB
+    root["sobel_00_rtl_sim/"]
+    root --> make["Makefile<br/>Linux/macOS/MSYS2/Git Bash 仿真入口"]
+    root --> ps["run_sim.ps1<br/>Windows PowerShell 仿真入口"]
+    root --> data["data/input_rgb.hex<br/>默认 128x72 RGB888 输入图像"]
+    root --> rtl["rtl/"]
+    rtl --> uart["uart_rx.v<br/>UART 接收模块"]
+    rtl --> frame["image_frame_rx.v<br/>图像帧协议解析模块"]
+    rtl --> gray["rgb_to_gray.v<br/>RGB 转灰度模块"]
+    rtl --> sobel["sobel_core.v<br/>Sobel 边缘检测核心"]
+    rtl --> system["sobel_system.v<br/>顶层仿真系统"]
+    root --> tb["tb/sobel_system_tb.v<br/>仿真 testbench"]
+    root --> tools["tools/"]
+    tools --> gen["gen_input_rgb.py<br/>生成测试输入图像"]
+    tools --> convert["convert_images.py<br/>转换仿真输出 PNG"]
 
-run_sim.ps1
-    Windows PowerShell 下的仿真入口
-
-data/input_rgb.hex
-    默认 128x72 RGB888 输入图像
-
-rtl/uart_rx.v
-    UART 接收模块
-
-rtl/image_frame_rx.v
-    图像帧协议解析模块
-
-rtl/rgb_to_gray.v
-    RGB 转灰度模块，后续 Vivado 工程会复用
-
-rtl/sobel_core.v
-    Sobel 边缘检测核心，后续 Vivado 工程会复用
-
-rtl/sobel_system.v
-    连接 UART、图像接收、灰度转换和 Sobel 的顶层仿真系统
-
-tb/sobel_system_tb.v
-    仿真 testbench
-
-tools/gen_input_rgb.py
-    生成测试输入图像
-
-tools/convert_images.py
-    把仿真输出转换为 PNG 图片
+    classDef root fill:#111827,stroke:#111827,color:#ffffff,stroke-width:2px;
+    classDef entry fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef rtl fill:#fef3c7,stroke:#d97706,color:#0f172a,stroke-width:2px;
+    classDef tool fill:#dcfce7,stroke:#16a34a,color:#0f172a,stroke-width:2px;
+    classDef test fill:#fae8ff,stroke:#c026d3,color:#0f172a,stroke-width:2px;
+    class root root;
+    class make,ps,data entry;
+    class rtl,uart,frame,gray,sobel,system rtl;
+    class tools,gen,convert tool;
+    class tb test;
 ```
 
 仿真输出写入 `build/` 目录。该目录是生成结果目录，不需要提交到 Git。
 
-## 4. 实验步骤
+## 4. 运行环境要求
 
-### 4.1 检查工具
+完整运行本实验需要以下工具：
+
+1. Icarus Verilog
+   - `iverilog`：把 Verilog 源码和 testbench 编译成 `.vvp` 仿真文件。
+   - `vvp`：执行 `.vvp` 仿真文件，生成 `sobel_out.pgm` 和 `sobel_system_tb.vcd`。
+   - `vvp` 是 Icarus Verilog 的仿真运行器，不依赖 Python。
+2. Python 3
+   - 用于运行 `tools/gen_input_rgb.py`，生成输入 RGB hex 数据。
+   - 用于运行 `tools/convert_images.py`，把仿真输出转换成 PNG 图片。
+
+Windows PowerShell 默认使用原生 Windows 版 Icarus Verilog：
+
+```text
+C:\iverilog\bin\iverilog.exe
+C:\iverilog\bin\vvp.exe
+```
+
+如果 Icarus Verilog 安装在其它位置，可以运行脚本时显式指定：
+
+```powershell
+.\run_sim.ps1 -Iverilog "D:\tools\iverilog\bin\iverilog.exe" -Vvp "D:\tools\iverilog\bin\vvp.exe"
+```
+
+如果使用 WSL，则需要 WSL 内安装 `make`、`iverilog`、`vvp` 和 `python3`，并通过 `run_sim_wsl.ps1` 启动。
+
+## 5. 实验步骤
+
+### 5.1 检查工具
 
 Windows PowerShell 中检查：
 
 ```powershell
-iverilog -V
+C:\iverilog\bin\iverilog.exe -V
+C:\iverilog\bin\vvp.exe -V
 python --version
 ```
 
 如果 Windows 没有原生 Icarus Verilog，也可以使用 WSL：
 
 ```powershell
-.\run_sim.ps1 -UseWsl
+.\run_sim_wsl.ps1
 ```
 
-### 4.2 运行默认仿真
+### 5.2 运行默认仿真
 
 Windows PowerShell：
 
@@ -107,7 +138,7 @@ cd zynq7020-image-processing/sobel_00_rtl_sim
 make sim
 ```
 
-### 4.3 查看仿真结果
+### 5.3 查看仿真结果
 
 默认仿真会生成：
 
@@ -127,7 +158,7 @@ build/sobel_system_tb.vcd
 
 报告中至少应放入 `input_rgb.png`、`sobel_out.png` 和一张关键波形截图。
 
-### 4.4 查看关键波形
+### 5.4 查看关键波形
 
 使用 GTKWave 或 Vivado 仿真波形工具打开：
 
@@ -147,7 +178,7 @@ edge_frame_done
 
 能够看到 `edge_frame_done` 说明一帧 Sobel 处理已经结束。
 
-### 4.5 只重新生成图片
+### 5.5 只重新生成图片
 
 如果仿真已经跑过，只想重新生成 PNG：
 
@@ -155,7 +186,7 @@ edge_frame_done
 make images
 ```
 
-## 5. 验收标准
+## 6. 验收标准
 
 基础实验验收时应能提交：
 
@@ -164,25 +195,25 @@ make images
 3. 包含 `gray_valid`、`edge_valid`、`edge_frame_done` 的波形截图。
 4. 对 UART 帧格式和 Sobel 数据流的简要说明。
 
-## 6. 常见问题
+## 7. 常见问题
 
-### 6.1 找不到 iverilog
+### 7.1 找不到 iverilog
 
 说明 Icarus Verilog 没有安装，或者没有加入 `PATH`。Windows 下可改用 WSL 运行：
 
 ```powershell
-.\run_sim.ps1 -UseWsl
+.\run_sim_wsl.ps1
 ```
 
-### 6.2 没有生成 PNG
+### 7.2 没有生成 PNG
 
 检查 Python 是否可用，以及 `tools/convert_images.py` 是否正常执行。也可以先确认 `build/sobel_out.pgm` 是否已经生成。
 
-### 6.3 仿真时间很长
+### 7.3 仿真时间很长
 
 完整 UART 字节流仿真会比直接像素仿真慢。默认 Makefile 使用较快的仿真参数，板级 RTL 仍保持 `50 MHz` 和 `115200` baud 的默认设置。
 
-## 7. 可选扩展
+## 8. 可选扩展
 
 本实验的扩展只要求在仿真环境中完成，属于第一周基础扩展。学生至少完成 1 项，并把结果写入初步实验报告。
 

@@ -23,29 +23,48 @@
 
 ## 2. 数据流
 
-```text
-PC 图片 / 摄像头
-    -> UART 图像帧
-    -> PS 写入 AXI BRAM 图像区
-    -> PL 读取图像并完成灰度转换和 Sobel
-    -> HDMI 显示
+```mermaid
+flowchart LR
+    img["PC 图片 / 摄像头"] --> img_uart["UART 图像帧"]
+    img_uart --> img_ps["PS 写入 AXI BRAM 图像区"]
+    img_ps --> img_bram["BRAM 图像区<br/>framebuffer"]
+    img_bram --> img_pl["PL 读取图像<br/>灰度转换 + Sobel"]
 
-PC 控制命令
-    -> UART 命令
-    -> PS 解析命令
-    -> PS 写入 AXI BRAM 控制字
-    -> PL 读取控制字
-    -> 切换显示模式、阈值和彩色叠加开关
+    cmd["PC 控制命令"] --> cmd_uart["UART 命令"]
+    cmd_uart --> cmd_ps["PS 解析命令"]
+    cmd_ps --> ctrl_bram["BRAM 控制字<br/>mode / threshold / overlay"]
+    ctrl_bram --> ctrl_pl["PL 读取控制字"]
+
+    img_pl --> mux["显示模式选择<br/>阈值判断 + 彩色叠加"]
+    ctrl_pl --> mux
+    mux --> hdmi["HDMI 显示"]
+
+    classDef pc fill:#dcfce7,stroke:#16a34a,color:#0f172a,stroke-width:2px;
+    classDef ps fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef mem fill:#ede9fe,stroke:#7c3aed,color:#0f172a,stroke-width:2px;
+    classDef pl fill:#fef3c7,stroke:#d97706,color:#0f172a,stroke-width:2px;
+    classDef out fill:#fae8ff,stroke:#c026d3,color:#0f172a,stroke-width:2px;
+    class img,cmd,img_uart,cmd_uart pc;
+    class img_ps,cmd_ps ps;
+    class img_bram,ctrl_bram mem;
+    class img_pl,ctrl_pl,mux pl;
+    class hdmi out;
 ```
 
 建议把 BRAM 分成两个区域：
 
-```text
-0x40000000 + 0x0000
-    图像 framebuffer，128 x 72，每像素 32 bit，格式 0x00RRGGBB
+```mermaid
+flowchart TB
+    base["AXI BRAM base<br/>0x40000000"]
+    base --> img_area["0x0000<br/>图像 framebuffer<br/>128 x 72 x 32 bit<br/>0x00RRGGBB"]
+    base --> ctrl_area["0x9000<br/>控制字区域<br/>display_mode / threshold / overlay_enable"]
 
-0x40000000 + 0x9000
-    控制字区域，例如 display_mode、threshold、overlay_enable
+    classDef base fill:#111827,stroke:#111827,color:#ffffff,stroke-width:2px;
+    classDef image fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef ctrl fill:#fee2e2,stroke:#dc2626,color:#0f172a,stroke-width:2px;
+    class base base;
+    class img_area image;
+    class ctrl_area ctrl;
 ```
 
 控制字地址只是建议。实际工程中必须确认 BRAM 空间足够，并且控制字地址不与图像区冲突。
@@ -88,19 +107,27 @@ GUI 上位机中使用 `Display control for sobel_05` 区域设置 `Mode`、`Thr
 
 本实验至少需要 3 个控制字：
 
-```text
-display_mode
-    0: 原图
-    1: 灰度图
-    2: Sobel 二值化边缘图
-    3: 原图 + 彩色边缘叠加
+```mermaid
+flowchart TB
+    ctrl["控制字"]
+    ctrl --> mode["display_mode"]
+    mode --> mode0["0：原图"]
+    mode --> mode1["1：灰度图"]
+    mode --> mode2["2：Sobel 二值化边缘图"]
+    mode --> mode3["3：原图 + 彩色边缘叠加"]
+    ctrl --> threshold["threshold<br/>Sobel 二值化阈值，建议初始值 80"]
+    ctrl --> overlay["overlay_enable"]
+    overlay --> off["0：关闭彩色边缘叠加"]
+    overlay --> on["1：打开彩色边缘叠加"]
 
-threshold
-    Sobel 二值化阈值，建议初始值 80
-
-overlay_enable
-    0: 关闭彩色边缘叠加
-    1: 打开彩色边缘叠加
+    classDef ctrl fill:#111827,stroke:#111827,color:#ffffff,stroke-width:2px;
+    classDef mode fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef threshold fill:#fef3c7,stroke:#d97706,color:#0f172a,stroke-width:2px;
+    classDef overlay fill:#dcfce7,stroke:#16a34a,color:#0f172a,stroke-width:2px;
+    class ctrl ctrl;
+    class mode,mode0,mode1,mode2,mode3 mode;
+    class threshold threshold;
+    class overlay,off,on overlay;
 ```
 
 PS 端负责写控制字，PL 端负责读取控制字并改变 HDMI 输出。
@@ -109,20 +136,25 @@ PS 端负责写控制字，PL 端负责读取控制字并改变 HDMI 输出。
 
 本实验从 `sobel_04_uart_sobel_hdmi` 派生工程，主要修改：
 
-```text
-PS 端 main.c
-    增加控制命令解析
-    增加 display_mode、threshold、overlay_enable 写入
-    增加命令回显，打印当前控制状态
+```mermaid
+flowchart TB
+    ps["PS 端 main.c"] --> parse["增加控制命令解析"]
+    ps --> write["写入 display_mode / threshold / overlay_enable"]
+    ps --> echo["命令回显，打印当前控制状态"]
 
-hdmi_bram_sobel_display.v
-    增加控制字读取
-    增加灰度图、边缘图、彩色叠加图输出选择
-    增加 Sobel 阈值判断
+    pl["hdmi_bram_sobel_display.v"] --> read["读取控制字"]
+    pl --> select["灰度图 / 边缘图 / 彩色叠加图输出选择"]
+    pl --> threshold["Sobel 阈值判断"]
 
-仿真 testbench
-    构造不同控制字
-    验证不同模式、阈值和叠加开关下的 RGB 输出
+    tb["仿真 testbench"] --> ctrl["构造不同控制字"]
+    tb --> verify["验证不同模式、阈值和叠加开关下的 RGB 输出"]
+
+    classDef ps fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef pl fill:#fef3c7,stroke:#d97706,color:#0f172a,stroke-width:2px;
+    classDef test fill:#fae8ff,stroke:#c026d3,color:#0f172a,stroke-width:2px;
+    class ps,parse,write,echo ps;
+    class pl,read,select,threshold pl;
+    class tb,ctrl,verify test;
 ```
 
 不建议第一版同时修改 PC GUI、提高波特率或引入网络传输。
@@ -131,38 +163,29 @@ hdmi_bram_sobel_display.v
 
 本实验需要 PS 端 SDK 程序。当前目录已经包含完整 SDK 工作区：
 
-```text
-sobel_05_pc_control_display.sdk/
-    top_hw_platform_0/
-    ps_uart_control_bram_app_bsp/
-    ps_uart_control_bram_app/
+```mermaid
+flowchart TB
+    sdk["sobel_05_pc_control_display.sdk/"]
+    sdk --> platform["top_hw_platform_0/<br/>硬件平台"]
+    sdk --> bsp["ps_uart_control_bram_app_bsp/<br/>BSP 工程"]
+    sdk --> app["ps_uart_control_bram_app/<br/>PS 端应用工程"]
+    app --> src["src/main.c<br/>应用源码"]
+    app --> elf["Debug/ps_uart_control_bram_app.elf<br/>已编译 ELF"]
+    backup["ps_uart_control_bram_app/src/main.c<br/>外层源码备份"] -.重建时导入.-> app
+
+    classDef sdk fill:#111827,stroke:#111827,color:#ffffff,stroke-width:2px;
+    classDef platform fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef bsp fill:#ede9fe,stroke:#7c3aed,color:#0f172a,stroke-width:2px;
+    classDef app fill:#dcfce7,stroke:#16a34a,color:#0f172a,stroke-width:2px;
+    classDef backup fill:#fef3c7,stroke:#d97706,color:#0f172a,stroke-width:2px;
+    class sdk sdk;
+    class platform platform;
+    class bsp bsp;
+    class app,src,elf app;
+    class backup backup;
 ```
 
-SDK 中真正要运行的应用工程是：
-
-```text
-sobel_05_pc_control_display.sdk/ps_uart_control_bram_app
-```
-
-应用源码位置：
-
-```text
-sobel_05_pc_control_display.sdk/ps_uart_control_bram_app/src/main.c
-```
-
-已经编译生成的 ELF 位置：
-
-```text
-sobel_05_pc_control_display.sdk/ps_uart_control_bram_app/Debug/ps_uart_control_bram_app.elf
-```
-
-外层目录：
-
-```text
-ps_uart_control_bram_app/src/main.c
-```
-
-是源码备份和重建 SDK 工程时的导入来源，不是 SDK GUI 中直接打开的工程。
+SDK 中真正要运行的应用工程是 `sobel_05_pc_control_display.sdk/ps_uart_control_bram_app`。应用源码位于 `sobel_05_pc_control_display.sdk/ps_uart_control_bram_app/src/main.c`，已经编译生成的 ELF 位于 `sobel_05_pc_control_display.sdk/ps_uart_control_bram_app/Debug/ps_uart_control_bram_app.elf`。外层 `ps_uart_control_bram_app/src/main.c` 是源码备份和重建 SDK 工程时的导入来源，不是 SDK GUI 中直接打开的工程。
 
 如果 SDK 工程丢失，或 SDK 中只剩下 `top_hw_platform_0` 而没有应用工程，可以在本目录运行：
 
@@ -178,13 +201,24 @@ Windows 下如果 `xsct` 没有加入 PATH，可以运行：
 
 不要删除：
 
-```text
-sobel_05_pc_control_display.sdk/top_hw_platform_0
-sobel_05_pc_control_display.sdk/ps_uart_control_bram_app_bsp
-sobel_05_pc_control_display.sdk/ps_uart_control_bram_app
-sobel_05_pc_control_display.sdk/top.hdf
-ps_uart_control_bram_app
-rebuild_sdk_workspace.tcl
+```mermaid
+flowchart TB
+    keep["不要删除"]
+    keep --> platform["sobel_05_pc_control_display.sdk/top_hw_platform_0"]
+    keep --> bsp["sobel_05_pc_control_display.sdk/ps_uart_control_bram_app_bsp"]
+    keep --> app["sobel_05_pc_control_display.sdk/ps_uart_control_bram_app"]
+    keep --> hdf["sobel_05_pc_control_display.sdk/top.hdf"]
+    keep --> backup["ps_uart_control_bram_app"]
+    keep --> rebuild["rebuild_sdk_workspace.tcl"]
+
+    classDef keep fill:#111827,stroke:#111827,color:#ffffff,stroke-width:2px;
+    classDef sdk fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef backup fill:#fef3c7,stroke:#d97706,color:#0f172a,stroke-width:2px;
+    classDef script fill:#dcfce7,stroke:#16a34a,color:#0f172a,stroke-width:2px;
+    class keep keep;
+    class platform,bsp,app,hdf sdk;
+    class backup backup;
+    class rebuild script;
 ```
 
 其中 `top_hw_platform_0` 是硬件平台，`ps_uart_control_bram_app_bsp` 是 BSP，`ps_uart_control_bram_app` 是要下载运行的 PS 程序。SDK 自动生成 `top_hw_platform_1` 通常是重复导入硬件平台导致的；正常使用本目录已有的 `top_hw_platform_0` 即可。

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pwsh -Command \"& 'C:\\\\iverilog\\\\bin\\\\iverilog.exe' -h 2>&1\")",
+      "Bash(powershell -Command \"& 'C:\\\\iverilog\\\\bin\\\\iverilog.exe' -h 2>&1\")"
+    ]
+  }
+}

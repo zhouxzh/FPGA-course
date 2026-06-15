@@ -4,9 +4,8 @@ param(
     [int]$ClkFreq = 12000000,
     [int]$BaudRate = 1000000,
     [string]$Python = "python",
-    [string]$Iverilog = "iverilog",
-    [string]$Vvp = "vvp",
-    [switch]$UseWsl
+    [string]$Iverilog = "C:\iverilog\bin\iverilog.exe",
+    [string]$Vvp = "C:\iverilog\bin\vvp.exe"
 )
 
 $ErrorActionPreference = "Stop"
@@ -16,42 +15,36 @@ Set-Location $ScriptDir
 
 function Test-Tool {
     param([string]$Name)
-
     return [bool](Get-Command $Name -ErrorAction SilentlyContinue)
 }
 
-function Convert-To-WslPath {
+function Invoke-External {
+    param(
+        [string]$Description,
+        [scriptblock]$Command
+    )
+
+    & $Command
+    if ($LASTEXITCODE -ne 0) {
+        throw "$Description failed with exit code $LASTEXITCODE."
+    }
+}
+
+function Convert-ToVerilogPath {
     param([string]$Path)
-
-    $fullPath = (Resolve-Path -LiteralPath $Path).Path
-    $drive = $fullPath.Substring(0, 1).ToLowerInvariant()
-    $rest = $fullPath.Substring(2).Replace("\", "/")
-    return "/mnt/$drive$rest"
+    return $Path -replace '\\', '/'
 }
 
-if (-not $UseWsl -and -not (Test-Tool $Iverilog)) {
-    if (Test-Tool "wsl") {
-        Write-Host "Native '$Iverilog' was not found; running the simulation through WSL."
-        $UseWsl = $true
-    }
-}
-
-if ($UseWsl) {
-    if (-not (Test-Tool "wsl")) {
-        throw "WSL was requested but 'wsl.exe' was not found."
-    }
-
-    $wslDir = Convert-To-WslPath $ScriptDir
-    $cmd = "cd '$wslDir' && make sim WIDTH=$Width HEIGHT=$Height CLK_FREQ=$ClkFreq BAUD_RATE=$BaudRate"
-    wsl -- bash -lc $cmd
-    exit $LASTEXITCODE
-}
+$IverilogDir = Split-Path -Parent $Iverilog
+$IvlDir = Join-Path (Split-Path -Parent $IverilogDir) "lib\ivl"
 
 foreach ($tool in @($Python, $Iverilog, $Vvp)) {
     if (-not (Test-Tool $tool)) {
-        throw "Required command '$tool' was not found. Install Icarus Verilog, use -UseWsl, or pass the command path."
+        throw "Required command '$tool' was not found. Install Icarus Verilog or pass the command path with -Iverilog/-Vvp."
     }
 }
+
+$env:Path = "$IverilogDir;$env:Path"
 
 $BuildDir = "build"
 $Top = "sobel_system_tb"
@@ -68,9 +61,15 @@ $PgmOut = Join-Path $BuildDir "sobel_out.pgm"
 $InputPng = Join-Path $BuildDir "input_rgb.png"
 $SobelPng = Join-Path $BuildDir "sobel_out.png"
 
+$InputHexDefine = Convert-ToVerilogPath $InputHex
+$PgmOutDefine = Convert-ToVerilogPath $PgmOut
+$VcdOutDefine = Convert-ToVerilogPath $VcdOut
+
 New-Item -ItemType Directory -Force -Path $BuildDir | Out-Null
 
-& $Python tools/gen_input_rgb.py --width $Width --height $Height --output $InputHex
+Invoke-External "Input generation" {
+    & $Python tools/gen_input_rgb.py --width $Width --height $Height --output $InputHex
+}
 
 $rtl = @(
     "rtl/uart_rx.v",
@@ -86,14 +85,22 @@ $defines = @(
     "-DIMG_HEIGHT=$Height",
     "-DCLK_FREQ=$ClkFreq",
     "-DBAUD_RATE=$BaudRate",
-    "-DINPUT_RGB_HEX=`"$InputHex`"",
-    "-DOUTPUT_PGM=`"$PgmOut`"",
-    "-DVCD_FILE=`"$VcdOut`""
+    "-DINPUT_RGB_HEX=\`"$InputHexDefine\`"",
+    "-DOUTPUT_PGM=\`"$PgmOutDefine\`"",
+    "-DVCD_FILE=\`"$VcdOutDefine\`""
 )
 
-& $Iverilog -g2005-sv @defines -o $VvpOut "tb/sobel_system_tb.v" @rtl
-& $Vvp $VvpOut
-& $Python tools/convert_images.py --width $Width --height $Height --input-rgb $InputHex --sobel-pgm $PgmOut --input-png $InputPng --sobel-png $SobelPng
+Invoke-External "Verilog compilation" {
+    & $Iverilog -B $IvlDir -g2005-sv @defines -o $VvpOut "tb/sobel_system_tb.v" @rtl
+}
+
+Invoke-External "Simulation" {
+    & $Vvp -M $IvlDir $VvpOut
+}
+
+Invoke-External "Image conversion" {
+    & $Python tools/convert_images.py --width $Width --height $Height --input-rgb $InputHex --sobel-pgm $PgmOut --input-png $InputPng --sobel-png $SobelPng
+}
 
 Write-Host "Simulation finished."
 Write-Host "Output image: $SobelPng"

@@ -19,17 +19,28 @@
 
 ## 1. 实验数据流
 
-```text
-PC 摄像头 / 图片
-    -> USB 串口，115200 baud
-    -> ZYNQ PS UART
-    -> PS 软件解析帧数据
-    -> AXI GP0
-    -> AXI BRAM Controller
-    -> Block RAM
-    -> PL HDMI 读 BRAM
-    -> RGB2DVI
-    -> HDMI 显示器
+```mermaid
+flowchart LR
+    pc["PC 摄像头 / 图片"] --> uart["USB 串口<br/>115200 baud"]
+    uart --> ps_uart["ZYNQ PS UART"]
+    ps_uart --> parser["PS 软件解析帧数据"]
+    parser --> axi["AXI GP0"]
+    axi --> ctrl["AXI BRAM Controller"]
+    ctrl --> bram["Block RAM<br/>0x00RRGGBB"]
+    bram --> pl["PL HDMI 读 BRAM"]
+    pl --> dvi["RGB2DVI"]
+    dvi --> hdmi["HDMI 显示器"]
+
+    classDef pc fill:#dcfce7,stroke:#16a34a,color:#0f172a,stroke-width:2px;
+    classDef ps fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef axi fill:#ede9fe,stroke:#7c3aed,color:#0f172a,stroke-width:2px;
+    classDef pl fill:#fef3c7,stroke:#d97706,color:#0f172a,stroke-width:2px;
+    classDef out fill:#fae8ff,stroke:#c026d3,color:#0f172a,stroke-width:2px;
+    class pc,uart pc;
+    class ps_uart,parser ps;
+    class axi,ctrl,bram axi;
+    class pl,dvi pl;
+    class hdmi out;
 ```
 
 当前实验保持串口波特率为 `115200`。这个波特率比较稳，但带宽较低，所以画面刷新速度会比较慢。
@@ -38,39 +49,33 @@ PC 摄像头 / 图片
 
 主要文件如下：
 
-```text
-sobel_03_uart_hdmi.xpr
-    Vivado 工程
+```mermaid
+flowchart TB
+    project["sobel_03_uart_hdmi.xpr<br/>Vivado 工程"]
+    project --> bd["create_ps_uart_bram_hdmi_bd.tcl<br/>Block Design 生成脚本"]
+    project --> top["top.v<br/>顶层模块"]
+    top --> pltop["hdmi_pl_top.v<br/>PL 侧 HDMI 显示顶层"]
+    pltop --> bramdisp["hdmi_bram_display.v<br/>BRAM 读图 + 10 倍放大"]
+    project --> xdc["hdmi_out_test.xdc<br/>HDMI 管脚约束"]
+    project --> sdk["sobel_03_uart_hdmi.sdk/"]
+    sdk --> sdkmain["ps_uart_bram_app/src/main.c<br/>SDK 工作区 PS 应用"]
+    project --> backup["ps_uart_bram_app/src/main.c<br/>PS 端源码备份"]
+    host["../host_camera_uart/"] --> sender["camera_uart_sender.py<br/>PC 端串口发送脚本"]
+    host --> hostreadme["README.md<br/>PC 端运行说明"]
+    host --> req["requirements.txt<br/>Python 依赖"]
 
-create_ps_uart_bram_hdmi_bd.tcl
-    Block Design 生成脚本
-
-sobel_03_uart_hdmi.srcs/sources_1/new/top.v
-    顶层模块
-
-sobel_03_uart_hdmi.srcs/sources_1/new/hdmi_pl_top.v
-    PL 侧 HDMI 显示顶层
-
-sobel_03_uart_hdmi.srcs/sources_1/new/hdmi_bram_display.v
-    从 BRAM 读取 128x72 图像并放大显示
-
-sobel_03_uart_hdmi.srcs/constrs_1/new/hdmi_out_test.xdc
-    HDMI 管脚约束
-
-ps_uart_bram_app/src/main.c
-    PS 端 SDK 应用源码
-
-sobel_03_uart_hdmi.sdk/ps_uart_bram_app/src/main.c
-    SDK 工作区中的 PS 端应用源码
-
-../host_camera_uart/camera_uart_sender.py
-    PC 端摄像头 / 图片串口发送脚本
-
-../host_camera_uart/README.md
-    PC 端环境安装和运行说明
-
-../host_camera_uart/requirements.txt
-    PC 端 Python 依赖
+    classDef project fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef script fill:#dcfce7,stroke:#16a34a,color:#0f172a,stroke-width:2px;
+    classDef pl fill:#fef3c7,stroke:#d97706,color:#0f172a,stroke-width:2px;
+    classDef ps fill:#ede9fe,stroke:#7c3aed,color:#0f172a,stroke-width:2px;
+    classDef constr fill:#fee2e2,stroke:#dc2626,color:#0f172a,stroke-width:2px;
+    classDef host fill:#ccfbf1,stroke:#0f766e,color:#0f172a,stroke-width:2px;
+    class project project;
+    class bd script;
+    class top,pltop,bramdisp pl;
+    class sdk,sdkmain,backup ps;
+    class xdc constr;
+    class host,sender,hostreadme,req host;
 ```
 
 上一级目录中的 `../hdmi_common` 是 Sobel 系列工程共用的 HDMI 基础依赖目录，不能删除。Vivado 工程文件中保留了指向该目录的相对路径，用于记录 `video_clock`、`rgb2dvi_0`、`hdmi_out_test.xdc` 和 HDMI IP repository 的来源。删除该目录后，重新打开工程或重新生成 IP 时可能出现 HDMI 相关文件缺失。
@@ -94,12 +99,20 @@ source create_ps_uart_bram_hdmi_bd.tcl
 
 Block Design 中包含：
 
-```text
-ZYNQ7 Processing System
-SmartConnect
-AXI BRAM Controller
-Block Memory Generator
-BRAM_PORTB 外接到 PL HDMI 逻辑
+```mermaid
+flowchart LR
+    zynq["ZYNQ7 Processing System"] --> smart["SmartConnect"]
+    smart --> bram_ctrl["AXI BRAM Controller"]
+    bram_ctrl --> mem["Block Memory Generator"]
+    mem --> portb["BRAM_PORTB"]
+    portb --> pl["PL HDMI 逻辑"]
+
+    classDef ps fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef axi fill:#ede9fe,stroke:#7c3aed,color:#0f172a,stroke-width:2px;
+    classDef pl fill:#fef3c7,stroke:#d97706,color:#0f172a,stroke-width:2px;
+    class zynq ps;
+    class smart,bram_ctrl,mem,portb axi;
+    class pl pl;
 ```
 
 BRAM 地址映射：
@@ -122,15 +135,19 @@ data    = 0x00RRGGBB
 
 PL 端显示逻辑主要由以下模块完成：
 
-```text
-top.v
-    连接 Block Design 和 HDMI PL 顶层
+```mermaid
+flowchart TB
+    top["top.v<br/>连接 Block Design 和 HDMI PL 顶层"]
+    top --> pltop["hdmi_pl_top.v<br/>视频时钟 + BRAM 显示模块 + RGB2DVI"]
+    pltop --> bramdisp["hdmi_bram_display.v<br/>720p 时序 + BRAM 读图 + 10 倍放大"]
+    pltop --> dvi["RGB2DVI<br/>HDMI 编码输出"]
 
-hdmi_pl_top.v
-    生成视频时钟，连接 HDMI 读 BRAM 模块和 RGB2DVI
-
-hdmi_bram_display.v
-    产生 1280x720 时序，从 BRAM 读取 128x72 图像并做 10 倍放大
+    classDef top fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef pl fill:#fef3c7,stroke:#d97706,color:#0f172a,stroke-width:2px;
+    classDef out fill:#fae8ff,stroke:#c026d3,color:#0f172a,stroke-width:2px;
+    class top top;
+    class pltop,bramdisp pl;
+    class dvi out;
 ```
 
 显示关系：
@@ -165,15 +182,21 @@ D:\Github\FPGA-course\zynq7020-image-processing\sobel_03_uart_hdmi\sobel_03_uart
 
 Project Explorer 中通常有 3 个工程：
 
-```text
-top_hw_platform_0
-    硬件平台
+```mermaid
+flowchart TB
+    sdk["sobel_03_uart_hdmi.sdk"]
+    sdk --> platform["top_hw_platform_0<br/>硬件平台"]
+    sdk --> bsp["ps_uart_bram_app_bsp<br/>BSP 工程"]
+    sdk --> app["ps_uart_bram_app<br/>PS 端应用工程"]
 
-ps_uart_bram_app_bsp
-    BSP 工程
-
-ps_uart_bram_app
-    PS 端应用工程
+    classDef sdk fill:#111827,stroke:#111827,color:#ffffff,stroke-width:2px;
+    classDef platform fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef bsp fill:#ede9fe,stroke:#7c3aed,color:#0f172a,stroke-width:2px;
+    classDef app fill:#dcfce7,stroke:#16a34a,color:#0f172a,stroke-width:2px;
+    class sdk sdk;
+    class platform platform;
+    class bsp bsp;
+    class app app;
 ```
 
 需要修改和运行的是：

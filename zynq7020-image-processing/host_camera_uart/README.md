@@ -8,27 +8,36 @@
 
 推荐课堂上优先使用图形界面：
 
-```text
-camera_uart_gui.py
+```mermaid
+flowchart LR
+    gui["camera_uart_gui.py<br/>图形界面，上机优先使用"]
+    cli["camera_uart_sender.py<br/>命令行脚本，调试和批量测试"]
+
+    classDef gui fill:#dcfce7,stroke:#16a34a,color:#0f172a,stroke-width:2px;
+    classDef cli fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    class gui gui;
+    class cli cli;
 ```
 
-命令行脚本仍然保留，方便调试和批量测试：
-
-```text
-camera_uart_sender.py
-```
+命令行脚本仍然保留，方便调试和批量测试。
 
 ## 1. 文件说明
 
-```text
-camera_uart_gui.py
-    Tkinter 图形界面版本，推荐学生上机实验使用。支持摄像头、单图、多图、视频发送和 sobel_05 显示控制。
+```mermaid
+flowchart TB
+    root["host_camera_uart/"]
+    root --> gui["camera_uart_gui.py<br/>Tkinter 图形界面<br/>摄像头 / 单图 / 多图 / 视频 / sobel_05 控制"]
+    root --> cli["camera_uart_sender.py<br/>命令行版本<br/>教师调试 / 脚本化测试 / 问题定位"]
+    root --> req["requirements.txt<br/>opencv-python / numpy / pyserial"]
 
-camera_uart_sender.py
-    命令行版本，适合教师调试、脚本化测试和问题定位。支持摄像头、单图、多图、图片目录、视频发送和 sobel_05 控制帧。
-
-requirements.txt
-    Python 依赖列表，包含 opencv-python、numpy、pyserial。
+    classDef root fill:#111827,stroke:#111827,color:#ffffff,stroke-width:2px;
+    classDef gui fill:#dcfce7,stroke:#16a34a,color:#0f172a,stroke-width:2px;
+    classDef cli fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef dep fill:#ede9fe,stroke:#7c3aed,color:#0f172a,stroke-width:2px;
+    class root root;
+    class gui gui;
+    class cli cli;
+    class req dep;
 ```
 
 ## 2. 运行前提
@@ -134,16 +143,25 @@ Loop file input = 多图或视频需要循环播放时勾选
 
 操作流程：
 
-1. 在 Vivado/SDK 中下载并运行开发板程序。
-2. 关闭串口调试助手。
-3. 启动 `camera_uart_gui.py`。
-4. 点击 `Refresh`，刷新可用串口。
-5. 选择开发板对应的 COM 口。
-6. 选择输入源：`Camera`、`Single image`、`Image sequence` 或 `Video file`。
-7. 保持 `width = 128`、`height = 72`。
-8. 点击 `Start` 开始发送。
-9. 观察 HDMI 显示器画面是否更新。
-10. 点击 `Stop` 停止发送。
+```mermaid
+flowchart TB
+    a["Vivado/SDK<br/>下载并运行开发板程序"] --> b["关闭串口调试助手"]
+    b --> c["启动 camera_uart_gui.py"]
+    c --> d["Refresh<br/>刷新可用串口"]
+    d --> e["选择开发板 COM 口"]
+    e --> f["选择输入源<br/>Camera / Single image / Image sequence / Video file"]
+    f --> g["保持 width=128<br/>height=72"]
+    g --> h["Start<br/>开始发送"]
+    h --> i["观察 HDMI 画面是否更新"]
+    i --> j["Stop<br/>停止发送"]
+
+    classDef setup fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef pc fill:#dcfce7,stroke:#16a34a,color:#0f172a,stroke-width:2px;
+    classDef display fill:#fae8ff,stroke:#c026d3,color:#0f172a,stroke-width:2px;
+    class a,b setup;
+    class c,d,e,f,g,h,j pc;
+    class i display;
+```
 
 如果启用了 `Preview`，PC 端预览画面会直接显示在同一个 Tkinter 界面中，不会额外弹出 OpenCV 预览窗口。预览画面会按照界面中的 Preview 区域等比例放大显示，但发送给开发板的图像分辨率仍由 `Width` 和 `Height` 决定，默认保持 `128x72`。
 
@@ -523,9 +541,19 @@ Windows 隐私设置是否允许桌面应用访问摄像头
 
 推荐学生第一次上机流程：
 
-1. 先用串口调试助手确认 PS 程序已经打印 `waiting for frame header`。
-2. 关闭串口调试助手。
-3. 打开 GUI。
-4. 选择 COM 口和默认参数。
-5. 使用图片模式发送单帧，确认 HDMI 能显示。
-6. 再切换到摄像头模式连续发送。
+```mermaid
+flowchart TB
+    a["串口调试助手<br/>确认 waiting for frame header"] --> b["关闭串口调试助手"]
+    b --> c["打开 GUI"]
+    c --> d["选择 COM 口和默认参数"]
+    d --> e["图片模式发送单帧"]
+    e --> f["确认 HDMI 能显示"]
+    f --> g["切换到摄像头模式连续发送"]
+
+    classDef check fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef pc fill:#dcfce7,stroke:#16a34a,color:#0f172a,stroke-width:2px;
+    classDef display fill:#fae8ff,stroke:#c026d3,color:#0f172a,stroke-width:2px;
+    class a,b check;
+    class c,d,e,g pc;
+    class f display;
+```

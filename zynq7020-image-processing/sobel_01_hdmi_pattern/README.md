@@ -13,11 +13,18 @@
 
 ## 2. 数据流
 
-```text
-image_rom_128x72
-    -> hdmi_image_display
-    -> rgb2dvi_0
-    -> HDMI 显示器
+```mermaid
+flowchart LR
+    rom["image_rom_128x72<br/>128 x 72 RGB"] --> display["hdmi_image_display<br/>时序 + 放大显示"]
+    display --> dvi["rgb2dvi_0<br/>TMDS 编码"]
+    dvi --> hdmi["HDMI 显示器"]
+
+    classDef data fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef pl fill:#fef3c7,stroke:#d97706,color:#0f172a,stroke-width:2px;
+    classDef out fill:#fae8ff,stroke:#c026d3,color:#0f172a,stroke-width:2px;
+    class rom data;
+    class display,dvi pl;
+    class hdmi out;
 ```
 
 显示关系：
@@ -30,18 +37,23 @@ HDMI 输出: 1280 x 720
 
 ## 3. 主要文件
 
-```text
-sobel_01_hdmi_pattern.xpr
-    Vivado 工程
+```mermaid
+flowchart TB
+    project["sobel_01_hdmi_pattern.xpr<br/>Vivado 工程"]
+    project --> top["top.v<br/>工程顶层"]
+    top --> clock["video_clock<br/>视频时钟"]
+    top --> display["hdmi_image_display.v<br/>720p 时序 + ROM 读图 + 10 倍放大"]
+    top --> dvi["rgb2dvi_0<br/>HDMI 输出 IP"]
+    project --> xdc["hdmi_out_test.xdc<br/>HDMI 管脚约束"]
 
-sobel_01_hdmi_pattern.srcs/sources_1/new/top.v
-    工程顶层，连接 video_clock、显示逻辑和 rgb2dvi_0
-
-sobel_01_hdmi_pattern.srcs/sources_1/new/hdmi_image_display.v
-    产生 1280x720 时序，读取 128x72 ROM 图片并放大显示
-
-sobel_01_hdmi_pattern.srcs/constrs_1/new/hdmi_out_test.xdc
-    HDMI 管脚约束
+    classDef project fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:2px;
+    classDef pl fill:#fef3c7,stroke:#d97706,color:#0f172a,stroke-width:2px;
+    classDef ip fill:#ede9fe,stroke:#7c3aed,color:#0f172a,stroke-width:2px;
+    classDef constr fill:#fee2e2,stroke:#dc2626,color:#0f172a,stroke-width:2px;
+    class project project;
+    class top,display pl;
+    class clock,dvi ip;
+    class xdc constr;
 ```
 
 上一级目录中的 `../hdmi_common` 是 Sobel 系列工程共用的 HDMI 基础依赖目录，不能删除。删除后重新打开工程或重新生成 IP 时可能出现 `video_clock`、`rgb2dvi_0` 或 HDMI 约束路径缺失。
@@ -58,12 +70,23 @@ D:\Github\FPGA-course\zynq7020-image-processing\sobel_01_hdmi_pattern\sobel_01_h
 
 确认 Sources 中包含：
 
-```text
-top.v
-hdmi_image_display.v
-video_clock
-rgb2dvi_0
-hdmi_out_test.xdc
+```mermaid
+flowchart TB
+    sources["Vivado Sources"]
+    sources --> top["top.v<br/>工程顶层"]
+    sources --> display["hdmi_image_display.v<br/>显示时序和 ROM 读图"]
+    sources --> clock["video_clock<br/>视频时钟 IP"]
+    sources --> dvi["rgb2dvi_0<br/>HDMI 输出 IP"]
+    sources --> xdc["hdmi_out_test.xdc<br/>HDMI 管脚约束"]
+
+    classDef root fill:#111827,stroke:#111827,color:#ffffff,stroke-width:2px;
+    classDef pl fill:#fef3c7,stroke:#d97706,color:#0f172a,stroke-width:2px;
+    classDef ip fill:#ede9fe,stroke:#7c3aed,color:#0f172a,stroke-width:2px;
+    classDef constr fill:#fee2e2,stroke:#dc2626,color:#0f172a,stroke-width:2px;
+    class sources root;
+    class top,display pl;
+    class clock,dvi ip;
+    class xdc constr;
 ```
 
 ### 4.2 检查顶层模块
