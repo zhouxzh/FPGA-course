@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm -rf \"这里开发板已经不耐烦了/images\"/*)",
+      "Bash(rm -rf \"酱味大鸡/images\"/*)"
+    ]
+  }
+}
